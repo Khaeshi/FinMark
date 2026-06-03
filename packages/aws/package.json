@@ -1,0 +1,13 @@
+{
+  "name": "@finmark/aws",
+  "version": "1.0.0",
+  "description": "AWS SDK wrappers for Finmark",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

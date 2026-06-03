@@ -1,0 +1,183 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+// Finmark Database Schema
+// PostgreSQL via (not included in the arcitectured diagram)
+// Run: npm run db:generate after changes
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  FINANCE
+  OPERATIONS
+  ANALYST
+  VIEWER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionTier {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+// ─── SME Clients ─────────────────────────────────────────────────────────────
+
+model SMEClient {
+  id               String           @id @default(cuid())
+  name             String
+  industry         String
+  country          String           @default("PH")
+  subscriptionTier SubscriptionTier @default(FREE)
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // relations
+  users      User[]
+  orders     Order[]
+  financials Financial[]
+  feedbacks  Feedback[]
+
+  @@map("sme_clients")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  cognitoId    String    @unique  // AWS Cognito sub
+  email        String    @unique
+  name         String
+  role         UserRole  @default(VIEWER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // optional — superadmins have no clientId
+  clientId     String?
+  client       SMEClient? @relation(fields: [clientId], references: [id])
+
+  @@index([email])
+  @@index([clientId])
+  @@map("users")
+}
+
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id          String      @id @default(cuid())
+  clientId    String
+  status      OrderStatus @default(PENDING)
+  amount      Decimal     @db.Decimal(18, 2)  // never Float
+  currency    String      @default("PHP")
+  description String?
+  metadata    Json?       // flexible extra data
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  client      SMEClient   @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// ─── Financial Records ───────────────────────────────────────────────────────
+
+model Financial {
+  id          String    @id @default(cuid())
+  clientId    String
+  period      String    // "2024-Q1", "2024-01" etc.
+  revenue     Decimal   @db.Decimal(18, 2)
+  expenses    Decimal   @db.Decimal(18, 2)
+  netProfit   Decimal   @db.Decimal(18, 2)
+  orderCount  Int       @default(0)
+  recordedAt  DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client      SMEClient @relation(fields: [clientId], references: [id])
+
+  @@unique([clientId, period])
+  @@index([clientId])
+  @@index([period])
+  @@map("financials")
+}
+
+// ─── Products ────────────────────────────────────────────────────────────────
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  sku         String    @unique
+  price       Decimal   @db.Decimal(18, 2)
+  stock       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([sku])
+  @@map("products")
+}
+
+// ─── Feedback ────────────────────────────────────────────────────────────────
+
+model Feedback {
+  id          String    @id @default(cuid())
+  clientId    String
+  subject     String
+  message     String
+  rating      Int?      // 1-5
+  isResolved  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  client      SMEClient @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@map("feedbacks")
+}
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
+// immutable — never update or delete rows here
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String
+  action      String    // e.g. "ORDER_CREATED", "USER_LOGIN"
+  resource    String    // e.g. "orders", "users"
+  resourceId  String?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
