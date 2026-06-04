@@ -1,6 +1,6 @@
 # Property Management Platform
 
-> A scalable microservice-based Property Management Platform developed for the Platform Technologies course, demonstrating modern software architecture, collaborative development workflows, and cloud-native design principles.
+> A scalable microservice-based Property Management Platform developed for the Platform Technologies course, demonstrating modern software architecture, collaborative development workflows, and cloud-native design principles that helps FinMark(fictional) with their occuring issue.
 
 ---
 
