@@ -191,8 +191,8 @@ All contributors are required to follow the project's Git workflow.
 ### Step 1: Update Local Branch
 
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git pull origin main
 ```
 
 ### Step 2: Create Feature Branch
@@ -200,6 +200,7 @@ git pull origin develop
 ```bash
 git checkout -b feature/your-feature-name
 ```
+#### Note: Make sure the branch name is naming specific and exact changes only.
 
 Examples:
 
@@ -228,7 +229,7 @@ git push origin feature/your-feature-name
 Create a Pull Request targeting:
 
 ```text
-develop
+main
 ```
 
 ### Step 6: Review and Approval
