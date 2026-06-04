@@ -53,7 +53,7 @@ export interface Order {
   status: OrderStatus
   amount: string        // always string for Decimal — never number
   currency: string
-  description?: string
+  description?: string | null
   createdAt: Date
   updatedAt: Date
 }

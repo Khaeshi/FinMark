@@ -1,0 +1,27 @@
+{
+  "name": "@finmark/report-svc",
+  "version": "1.0.0",
+  "description": "Report service — dashboard data, financial summaries, analytics",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@finmark/db": "*",
+    "@finmark/shared": "*",
+    "express": "^4.18.2",
+    "ioredis": "^5.3.2",
+    "node-cron": "^4.2.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node-cron": "^3.0.11",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.2"
+  }
+}
