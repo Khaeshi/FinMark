@@ -1,96 +1,92 @@
-# Property Management Platform
+# FinMark — Project Finer
 
-> A scalable microservice-based Property Management Platform developed for the Platform Technologies course, demonstrating modern software architecture, collaborative development workflows, and cloud-native design principles that helps FinMark(fictional) with their occuring issue.
+> A scalable, cloud-native SaaS platform built for FinMark, a data-driven financial services company supporting small and medium enterprises (SMEs) across Southeast Asia. Developed as a team academic project for the Platform Technologies course, demonstrating modern microservice architecture, collaborative Git workflows, and AWS-integrated backend design.
 
 ---
 
-## Project Overview
+## Background
 
-### Purpose
-
-The Property Management Platform is designed to provide a centralized system for managing properties, user accounts, orders, reports, feedback, and administrative operations through a distributed microservice architecture.
-
-This project serves as an academic implementation of modern platform engineering concepts, including:
-
-* Microservice Architecture
-* API Gateway Pattern
-* Shared Package Development
-* Infrastructure as Code
-* CI/CD Practices
-* Collaborative Software Development
-* Scalable Frontend and Backend Design
+FinMark's existing dashboard takes **20 seconds to load** when accessed by all 200 employees simultaneously — causing reporting delays, workflow bottlenecks, and missed intervention opportunities. Project Finer is the solution: a fast, scalable, and role-aware platform targeting **sub-3-second dashboard load times** even under peak concurrency.
 
 ---
 
 ## Project Objectives
 
-The primary objectives of this project are:
-
-* Design and implement a scalable platform architecture.
-* Demonstrate service-oriented application development.
-* Apply industry-standard Git workflows and code review practices.
-* Develop reusable shared packages across multiple services.
-* Implement testing, validation, and quality assurance processes.
-* Practice collaborative development within a multidisciplinary team.
+- Design and implement a production-grade microservice architecture on AWS
+- Solve the 20-second dashboard problem using Redis caching and PostgreSQL materialized views
+- Apply role-based access control so each user only fetches data relevant to their role
+- Demonstrate service-oriented development with shared packages across all services
+- Practice collaborative Git workflows within a multidisciplinary team
+- Implement testing across unit, integration, E2E, and network simulation layers
 
 ---
 
 ## System Architecture
 
-The Property Management Platform follows a microservice-based architecture designed to support scalability, maintainability, and separation of concerns.
+The platform follows a layered microservice architecture:
 
-### Architectural Highlights
-
-- CDN-based content delivery
-- Web Application Firewall (WAF) protection
-- Auto-scaled frontend cluster
-- API Gateway for authentication, validation, and rate limiting
-- Independent backend microservices
-- Redis caching layer
-- Database cluster with replication and backup storage
-- Centralized monitoring and logging
+```
+Customers/Users
+      ↓
+    CDN (CloudFront)          — edge caching, DDoS protection
+      ↓
+    WAF                       — OWASP rules, bot detection
+      ↓
+  Frontend Cluster            — Next.js, auto-scaled (3 replicas)
+      ↓
+  Load Balancer               — backend traffic distribution
+      ↓
+  API Gateway                 — authentication, rate limiting, validation
+      ↓
+  Microservices Layer         — UserAuth, Order, Report, Product, Admin, Feedback
+      ↓
+  Redis Cache Layer           — AdminSvc + ReportSvc cache (ElastiCache)
+      ↓
+  Database Cluster            — Primary SQL, Read Replica, Backup (AWS RDS)
+      ↓
+  Monitoring & Logging        — Alerts, Metrics, Error Tracking
+```
 
 ### Architecture Diagram
 
-![System Architecture](./docs/images/system-architecture.png)
-
-
-### Architectural Principles
-
-The system is designed around the following principles:
-
-* Separation of Concerns
-* Domain-Based Service Design
-* Scalability Through Replication
-* Shared Code Reusability
-* API-First Development
-* Fault Isolation
-* Maintainability and Extensibility
+> See `/docs/images/system-architecture.png`
 
 ---
 
 ## Repository Structure
 
-```text
-.
-├── frontend/
-│   └── Web application and UI components
+```
+finmark/
+├── apps/
+│   └── web/                  Next.js frontend (dashboard UI)
 │
 ├── services/
-│   └── Backend microservices
+│   ├── api-gateway/          Authentication, rate limiting, service proxy
+│   ├── user-auth-svc/        AWS Cognito auth + session management
+│   ├── order-svc/            Order lifecycle + SQS producer
+│   ├── report-svc/           Dashboard data, Redis cache, materialized views
+│   ├── product-svc/          Product catalog + SQS consumer
+│   ├── admin-svc/            User management, config, permissions
+│   └── feedback-svc/         SME client feedback
 │
 ├── packages/
-│   └── Shared libraries, utilities, and configurations
+│   ├── shared/               Shared TypeScript types, utilities, logger
+│   ├── db/                   Prisma schema, migrations, seed data
+│   └── aws/                  AWS SDK wrappers (Cognito, SQS, KMS, Secrets)
 │
 ├── infra/
-│   └── Infrastructure and deployment configurations
+│   ├── aws/                  Terraform configs (RDS, ElastiCache, Cognito, WAF)
+│   └── docker/               Docker Compose for local development
 │
 ├── tests/
-│   └── Automated testing suites
+│   ├── unit/                 Jest unit tests
+│   ├── integration/          API + cache integration tests
+│   ├── e2e/                  Playwright tests (4G/5G network simulation)
+│   └── load/                 k6 load tests (200 concurrent users)
 │
-├── docs/
-│   └── Project documentation
-│
+├── .env.example              Environment variable template
+├── package.json              Monorepo root (npm workspaces)
+├── turbo.json                Turborepo build pipeline
 ├── CONTRIBUTING.md
 └── README.md
 ```
@@ -100,39 +96,65 @@ The system is designed around the following principles:
 ## Technology Stack
 
 ### Frontend
-
-* Next
-* TypeScript
-* Vite
-* Tailwind CSS
+| Technology | Purpose |
+|---|---|
+| Next.js 16 | React framework, SSR, App Router |
+| TypeScript | Type safety across all components |
+| Tailwind CSS 4 | Utility-first styling |
+| Recharts | Dashboard data visualizations |
 
 ### Backend
+| Technology | Purpose |
+|---|---|
+| Node.js + Express | Microservice runtime |
+| TypeScript | End-to-end type safety |
+| Prisma ORM | PostgreSQL client + migrations |
+| Zod | Runtime schema validation |
+| ioredis | Redis cache client |
 
-* Node.js
-* Express.js
-* TypeScript
+### Database & Caching
+| Technology | Purpose |
+|---|---|
+| PostgreSQL (AWS RDS) | Primary relational database |
+| Neon | Serverless PostgreSQL for prototype |
+| Redis (AWS ElastiCache) | Dashboard and report caching |
+| Materialized Views | Pre-computed dashboard queries |
 
-### Database
+### AWS Services
+| Service | Purpose |
+|---|---|
+| Cognito | User authentication + MFA |
+| CloudFront | CDN + edge caching |
+| WAF | Web application firewall |
+| SQS | Async message queue between services |
+| KMS | Encryption key management |
+| Secrets Manager | Secure credential storage |
+| RDS PostgreSQL | Managed database with read replica |
+| ElastiCache | Managed Redis |
 
-* postgreSQL Database
+### Tooling
+| Tool | Purpose |
+|---|---|
+| Turborepo | Monorepo build orchestration |
+| npm Workspaces | Package linking across monorepo |
+| Jest | Unit and integration testing |
+| Playwright | E2E and network simulation testing |
+| k6 | Load testing (200 concurrent users) |
+| Docker Compose | Local development environment |
 
-### Caching
+---
 
-* Redis
+## Team Roles
 
-### Infrastructure
+| Role | Responsibility | Primary Area |
+|---|---|---|
+| **Khael** (Lead) | Architecture, backend services, AWS wiring, monorepo setup | `services/`, `packages/`, `infra/` |
+| **Frontend 1** | Dashboard UI, component design, layout | `apps/web/components/` |
+| **Frontend 2** | Page routes, data integration, responsive design | `apps/web/app/` |
+| **Frontend 3** | Styling system, design tokens, UX polish | `apps/web/` (CSS, Tailwind) |
+| **Frontend 4** | Testing, Playwright E2E specs, UI bug fixes | `tests/e2e/` |
 
-* Docker
-* Kubernetes (Planned)
-* GitHub Actions
-
-### Development Tools
-
-* ESLint
-* Prettier
-* Husky
-* Jest
-* TypeScript
+> Frontend contributors — read `apps/web/README.md` before starting.
 
 ---
 
@@ -140,157 +162,121 @@ The system is designed around the following principles:
 
 ### Prerequisites
 
-Ensure the following software is installed:
-
 ```bash
 Node.js >= 20
 npm >= 10
 Git >= 2.40
-Docker >= 24
+Docker >= 24 (optional, for local Redis/Postgres)
 ```
 
-### Clone Repository
+### Clone and Install
 
 ```bash
 git clone <repository-url>
-
-cd property-management-platform
-```
-
-### Install Dependencies
-
-```bash
+cd finmark
 npm install
 ```
 
-### Environment Configuration
+> `npm install` at the root installs all workspace packages at once due to npm workspaces.
 
-Create a local environment file:
+### Environment Setup
 
 ```bash
 cp .env.example .env
 ```
 
-Configure the required environment variables.
+Fill in the required values. At minimum for local development:
+- `DATABASE_URL` — your Neon or local PostgreSQL connection string
+- `REDIS_URL` — local Redis (default: `redis://localhost:6379`)
+- `NEXTAUTH_SECRET` — any random string locally
 
-Example:
-![.env.example](.env.example)
-
-### Start Development Environment
+### Database Setup
 
 ```bash
+cd packages/db
+npx prisma generate       # generate Prisma client
+npx prisma migrate dev    # run migrations
+npm run db:seed           # seed sample data
+```
+
+### Start Development
+
+```bash
+# from root — starts all apps and services in parallel
 npm run dev
+```
+
+Or run individually:
+```bash
+cd apps/web && npm run dev          # frontend at localhost:3000
+cd services/api-gateway && npm run dev   # gateway at localhost:4000
+cd services/report-svc && npm run dev    # report service at localhost:4003
 ```
 
 ---
 
 ## Development Workflow
 
-All contributors are required to follow the project's Git workflow.
+### Branch Strategy
 
-### Step 1: Update Local Branch
+```
+main                    — stable, protected
+└── feature/[name]      — all development work
+└── fix/[name]          — bug fixes
+```
+
+### Step-by-Step
 
 ```bash
+# 1. always start from latest main
 git checkout main
 git pull origin main
-```
 
-### Step 2: Create Feature Branch
-
-```bash
+# 2. create your branch
 git checkout -b feature/your-feature-name
-```
-#### Note: Make sure the branch name is naming specific and exact changes only.
 
-Examples:
-
-```bash
-feature/property-search
-feature/frontend-dashboard
-feature/order-management
-fix/login-validation
-```
-
-### Step 3: Commit Changes
-
-```bash
+# 3. make changes, commit often
 git add .
-git commit -m "feat(product): add product filtering"
-```
+git commit -m "feat(dashboard): add revenue chart component"
 
-### Step 4: Push Branch
-
-```bash
+# 4. push and open pull request
 git push origin feature/your-feature-name
 ```
 
-### Step 5: Open Pull Request
+### Commit Message Format
 
-Create a Pull Request targeting:
-
-```text
-main
+```
+feat(scope):    new feature
+fix(scope):     bug fix
+style(scope):   styling only, no logic change
+refactor(scope): code restructure
+test(scope):    adding or updating tests
+docs(scope):    documentation only
+chore(scope):   config, deps, tooling
 ```
 
-### Step 6: Review and Approval
-
-Changes must be reviewed before merging.
-
-Direct pushes to protected branches should be avoided.
+Examples:
+```bash
+feat(dashboard): add MetricCard component with trend indicator
+fix(report-svc): resolve null description type error
+style(sidebar): update active nav item highlight color
+docs(web): add component contribution guide
+```
 
 ---
 
-## Contribution Guidelines
+## Running Tests
 
-Detailed contribution rules are available in:
-
-```text
-CONTRIBUTING.md
+```bash
+npm run test              # all unit + integration tests
+npm run test:e2e          # Playwright E2E tests
+npm run lint              # ESLint across all packages
 ```
 
-### General Rules
-
-* Create a branch for every task.
-* Never commit directly to main.
-* Keep commits focused and descriptive.
-* Update documentation when introducing changes.
-* Follow project coding standards.
-* Submit a Pull Request for review.
-
-### Frontend Contributors
-
-Any changes involving:
-
-* UI Components
-* Styling
-* Layout Updates
-* Responsive Design
-* User Experience Improvements
-
-must be developed on a dedicated branch and submitted through a Pull Request.
-
-### Backend Contributors
-
-Any changes involving:
-
-* APIs
-* Services
-* Database Logic
-* Authentication
-* Business Rules
-
-must include appropriate testing and documentation updates.
-
-### Infrastructure Contributors
-
-Any changes involving:
-
-* Docker
-* Deployment Configurations
-* CI/CD Pipelines
-* Environment Setup
-
-must be validated before merging.
+Load test (requires k6 installed):
+```bash
+k6 run tests/load/k6/dashboard.js
+```
 
 ---
 
@@ -298,104 +284,75 @@ must be validated before merging.
 
 ### Naming Conventions
 
-| Item       | Convention          |
-| ---------- | ------------------- |
-| Components | PascalCase          |
-| Functions  | camelCase           |
-| Variables  | camelCase           |
-| Constants  | UPPER_CASE          |
-| Folders    | kebab-case          |
-| Branches   | feature/branch-name |
+| Item | Convention | Example |
+|---|---|---|
+| Components | PascalCase | `MetricCard.tsx` |
+| Functions | camelCase | `getDashboardData()` |
+| Variables | camelCase | `totalRevenue` |
+| Constants | UPPER_CASE | `CACHE_KEYS` |
+| Folders | kebab-case | `report-svc/` |
+| Branches | kebab-case | `feature/order-table` |
+| CSS classes | Tailwind utilities | `bg-emerald-400` |
 
-### Code Quality Principles
+### TypeScript Rules
 
-* DRY (Don't Repeat Yourself)
-* KISS (Keep It Simple, Stupid)
-* SOLID Principles
-* Clean Architecture
-* Modular Design
+- Never use `any` — use `unknown` and narrow the type
+- Always use `Decimal` (never `number` or `float`) for financial amounts
+- Import shared types from `@finmark/shared`, never redefine them locally
+- Enable strict mode — it is already configured in all `tsconfig.json` files
 
-### TypeScript Standards
+### Financial Data Rule
 
-* Avoid usage of `any`.
-* Prefer explicit typing.
-* Enable strict type checking.
-* Reuse shared types whenever possible.
+```typescript
+// ❌ NEVER do this with money
+const total = 1250.50 + 340.20  // float precision errors
 
----
-
-## Testing
-
-Testing is required to ensure reliability and maintainability.
-
-### Run Unit Tests
-
-```bash
-npm run test
+// ✅ ALWAYS use the shared decimal utility
+import { addAmounts } from '@finmark/shared'
+const total = addAmounts('1250.50', '340.20')
 ```
-
-### Run Coverage
-
-```bash
-npm run test:coverage
-```
-
-### Run Lint Checks
-
-```bash
-npm run lint
-```
-
-### Format Source Code
-
-```bash
-npm run format
-```
-
----
-
-## Continuous Integration
-
-The project may utilize automated workflows to perform:
-
-* Dependency Installation
-* Build Validation
-* Lint Checks
-* Unit Testing
-* Pull Request Verification
-
-All contributors are responsible for ensuring checks pass before requesting review.
 
 ---
 
 ## Documentation
 
-Additional documentation may be found within module-specific directories:
+Each major folder has its own README:
 
-```text
-frontend/README.md
-services/README.md
-packages/README.md
-infra/README.md
-```
-
-Each module contains implementation-specific information relevant to that area of the platform.
+| File | Covers |
+|---|---|
+| `apps/web/README.md` | Frontend setup, components, design system, contribution guide for UI team |
+| `services/README.md` | Microservice overview, ports, inter-service communication |
+| `packages/shared/README.md` | Shared types, utilities, how to extend |
+| `packages/db/README.md` | Schema, migrations, seeding, Prisma usage |
+| `infra/README.md` | AWS setup, Terraform, Docker Compose |
 
 ---
 
 ## Academic Information
 
-**Course:** Platform Technologies
+| | |
+|---|---|
+| **Course** | Platform Technologies |
+| **Project** | Project Finer — FinMark Platform |
+| **Team Size** | 5 members |
+| **Architecture** | Microservices, Cloud-Native |
+| **Methodology** | Git-Based Collaborative Development |
 
-**Project Type:** Team-Based Academic Project
+## 👥 Team Members & Roles
 
-**Architecture Style:** Microservices
+This project is a collaborative effort by the following team members:
 
-**Development Methodology:** Git-Based Collaborative Development
+
+| Name | Role | Core Responsibilities | GitHub / Contact |
+| :--- | :--- | :--- | :--- |
+| **Khaesey Angel Tablante** | Backend / MS2 Build Lead | Sprint planning, timeline tracking(Gantt), and integration review | [@Khaeshi](https://github.com/Khaeshi) |
+| **Dorin Castillo** | QA Engineer & <br>Milestone 3 Lead | Day-to-day test automation, bug tracking, and final deployment verification. **Milestone 3 Lead which evaluate, audit, and sign off on the entire project build.** | [@](https://github) |
+| **Mikko Jerome Bautista** | Lead UX Designer | User research, journey mapping, wireframing, and accessibility compliance (WCAG) | [@](https://github) |
+| **Christian John Batuigas** | Lead UI Designer | High-fidelity mockups, Design System management, component styling, and asset export. | [@samwilson](https://github) |
+| **John Wilberth Botin** | Network/Cyber Security Specialist | [@](https://github.com) |
 
 ---
 
 ## License
 
-This repository is intended for educational and academic purposes only.
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This project is for **academic and educational purposes only**. See `LICENSE` for details.

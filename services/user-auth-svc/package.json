@@ -1,0 +1,28 @@
+{
+  "name": "@finmark/user-auth-svc",
+  "version": "1.0.0",
+  "description": "User authentication service — AWS Cognito integration, session management",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1063.0",
+    "@finmark/aws": "*",
+    "@finmark/db": "*",
+    "@finmark/shared": "*",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^3.25.64"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
