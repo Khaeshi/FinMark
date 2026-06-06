@@ -346,7 +346,7 @@ This project is a collaborative effort by the following team members:
 | Name | Role | Core Responsibilities | GitHub / Contact |
 | :--- | :--- | :--- | :--- |
 | **Khaesey Angel Tablante** | Backend / <br>MS2 Build Lead | Sprint planning, timeline tracking (Gantt), and integration review | [@Khaeshi](https://github.com/Khaeshi) |
-| **Dorin Castillo** | QA Engineer / <br>MS3 Lead | Day-to-day test automation, bug tracking, and final deployment verification. **Milestone 3 Lead which evaluate, audit, and sign off on the entire project build.** | [@](https://github) |
+| **Dorin Castillo** | QA Engineer / <br>MS3 Lead | Day-to-day test automation, bug tracking, and final deployment verification. **Milestone 3 Lead which evaluate, audit, and sign off on the entire project build.** | [@grahamcrackers123](https://github/Denise) |
 | **Mikko Jerome Bautista** | Lead UX Designer | User research, journey mapping, wireframing, and accessibility compliance (WCAG) | [@](https://github) |
 | **Denise Claire Monghit** | Software Documentor / Presenter | Technical documentation, API reference guides, user manuals, and final project presentations. | [@](https://github) |
 | **Christian John Batuigas** | Lead AWS Architecture / Lead UI Designer / MS1 Lead | High-fidelity mockups, Design System management, component styling, and asset export. | [@](https://github) |
