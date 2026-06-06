@@ -1,0 +1,25 @@
+{
+  "name": "@finmark/admin-svc",
+  "version": "1.0.0",
+  "description": "Admin service — user management, permissions, config, Redis-cached",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@finmark/db": "*",
+    "@finmark/shared": "*",
+    "express": "^4.21.2",
+    "ioredis": "^5.11.0",
+    "zod": "^3.25.64"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
