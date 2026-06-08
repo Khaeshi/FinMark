@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { createLogger } from '@finmark/shared'
-import { submitFeedback, getFeedback, resolveFeedback } from '../services/feedbackService.js'
+import { submitFeedback, getFeedback, resolveFeedback } from '../services/feedbackService'
 
 const logger = createLogger('feedback-svc:controller')
 
@@ -22,7 +22,12 @@ export async function createFeedback(req: Request, res: Response) {
       return res.status(403).json({ success: false, error: 'Only client users can submit feedback' })
     }
 
-    const feedback = await submitFeedback({ clientId, ...body.data })
+    const feedback = await submitFeedback({ clientId, ...body.data as { 
+      subject: string; 
+      message: string; 
+      rating: number; 
+      clientId: string; 
+    }})
     res.status(201).json({ success: true, data: feedback })
   } catch (err) {
     logger.error('createFeedback failed', err, req.requestId)

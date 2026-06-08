@@ -1,6 +1,6 @@
 import express from 'express'
-import { reportRoutes } from './routes/index.js'
-import { startRefreshJob } from './jobs/refreshMaterialized.js'
+import { reportRoutes } from './routes/index'
+import { startRefreshJob } from './jobs/refreshMaterialized'
 import { createLogger } from '@finmark/shared'
 
 const app = express()

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "",
+  "packageManager": "npm@11.6.4",
   "workspaces": [
     "apps/*",
     "services/*",
@@ -10,9 +11,18 @@
   ],
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@finmark/web",
+    "dev:api": "turbo run dev --filter=@finmark/api-gateway",
+    "dev:services": "turbo run dev --filter=./services/*",
+    "dev:backend": "turbo run dev --filter=./services/* --filter=./packages/*",
     "build": "turbo run build",
     "test": "turbo run test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "turbo run lint",
+    "db:generate": "npm run db:generate -w @finmark/db",
+    "db:migrate": "npm run db:migrate -w @finmark/db",
+    "db:seed": "npm run db:seed -w @finmark/db",
+    "db:studio": "npm run db:studio -w @finmark/db"
   },
   "keywords": [],
   "author": "",

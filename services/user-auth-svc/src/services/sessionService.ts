@@ -1,7 +1,7 @@
 import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
 import type { UserRole } from '@finmark/shared'
-import { getUserFromToken } from './cognitoService.js'
+import { getUserFromToken } from './cognitoService'
 
 const logger = createLogger('user-auth-svc:session')
 
@@ -15,7 +15,7 @@ export async function syncUserToDatabase(
     where: { cognitoId },
     update: {
       lastLoginAt: new Date(),
-      name,             // sync name changes from Cognito
+      name,             
     },
     create: {
       cognitoId,

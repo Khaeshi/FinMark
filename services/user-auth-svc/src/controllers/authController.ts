@@ -6,7 +6,7 @@ import {
   refreshSession, forgotPassword,
   confirmForgotPassword, signOut,
   getUserFromToken,
-} from '../services/cognitoService.js'
+} from '../services/cognitoService'
 import { syncUserToDatabase, getUserProfile, logAuditEvent } from '../services/sessionService.js'
 
 const logger = createLogger('user-auth-svc:controller')
@@ -135,7 +135,12 @@ export async function register(req: Request, res: Response) {
   }
 }
 
-// ─── Confirm Email ────────────────────────────────────────────────────────────
+/**
+ * Confirm Email
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function confirm(req: Request, res: Response) {
   try {
     const body = ConfirmSchema.safeParse(req.body)

@@ -4,7 +4,7 @@ import {
   setUserActive, assignToClient,
   listClients, createNewClient, updateClientHandler,
   listAuditLogs,
-} from '../controllers/adminController.js'
+} from '../controllers/adminController'
 
 const router = Router()
 

@@ -1,5 +1,5 @@
 import express from 'express'
-import { orderRoutes } from './routes/index.js'
+import { orderRoutes } from './routes/index'
 import { createLogger } from '@finmark/shared'
 
 const app = express()

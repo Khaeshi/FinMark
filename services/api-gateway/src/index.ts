@@ -1,11 +1,11 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
-import { authMiddleware } from './middleware/auth.js'
-import { rateLimiter, strictRateLimiter } from './middleware/rateLimiter.js'
-import { requestLogger } from './middleware/requestLogger.js'
-import { proxyRoutes } from './routes/proxy.js'
-import { healthRouter } from './routes/health.js'
+import { authMiddleware } from './middleware/auth'
+import { rateLimiter, strictRateLimiter } from './middleware/rateLimiter'
+import { requestLogger } from './middleware/requestLogger'
+import { proxyRoutes } from './routes/proxy'
+import { healthRouter } from './routes/health'
 
 const app = express()
 const PORT = process.env.PORT || 4000

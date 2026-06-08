@@ -6,7 +6,7 @@ import {
   toggleUserActive, assignUserToClient,
   getAllClients, createClient, updateClient,
   getAuditLogs,
-} from '../services/adminService.js'
+} from '../services/adminService'
 
 const logger = createLogger('admin-svc:controller')
 
@@ -103,7 +103,11 @@ export async function createNewClient(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: body.error.errors[0].message })
     }
 
-    const client = await createClient(body.data)
+    const client = await createClient(body.data as { 
+      name: string; 
+      industry: string; 
+      country: string; 
+      subscriptionTier: "FREE" | "STARTER" | "GROWTH" | "ENTERPRISE"; })
     res.status(201).json({ success: true, data: client })
   } catch (err) {
     logger.error('createNewClient failed', err, req.requestId)

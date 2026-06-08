@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { z } from 'zod'
 import { createLogger } from '@finmark/shared'
-import { getProducts, getProductBySku, createProduct, updateStock } from '../services/productService.js'
+import { getProducts, getProductBySku, createProduct, updateStock } from '../services/productService'
 
 const logger = createLogger('product-svc:controller')
 
@@ -44,7 +44,12 @@ export async function createNewProduct(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: body.error.errors[0].message })
     }
 
-    const product = await createProduct(body.data)
+    const product = await createProduct(body.data as {
+      name: string
+      sku:   string
+      price: string
+      stock: number
+    })
     res.status(201).json({ success: true, data: product })
   } catch (err: any) {
     if (err.code === 'P2002') {

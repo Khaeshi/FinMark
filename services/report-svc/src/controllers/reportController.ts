@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { getDashboardData, getFinancialSummary } from '../services/reportService.js'
+import { getDashboardData, getFinancialSummary } from '../services/reportService'
 import { createLogger } from '@finmark/shared'
 
 const logger = createLogger('report-svc:controller')

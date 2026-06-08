@@ -1,7 +1,7 @@
 import cron from 'node-cron'
 import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
-import { invalidateCache } from '../cache/redisClient.js'
+import { invalidateCache } from '../cache/redisClient'
 
 const logger = createLogger('report-svc:refresh-job')
 

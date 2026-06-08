@@ -4,9 +4,12 @@ import { timeAgo } from '@/lib/format'
 interface Props {
   user: { name: string; role: string }
   lastUpdated: Date
+  isFromCache?: boolean
+  onRefresh?: () => void
+  error?: string | null
 }
 
-export function DashboardHeader({ user, lastUpdated }: Props) {
+export function DashboardHeader({ user, lastUpdated, isFromCache, onRefresh, error }: Props) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -16,12 +19,34 @@ export function DashboardHeader({ user, lastUpdated }: Props) {
         <h1 className="text-2xl lg:text-3xl font-bold text-white">
           Good morning, <span className="text-emerald-400">{user.name.split(' ')[0]}</span>
         </h1>
-        <p className="text-slate-400 text-sm mt-1">
-          {user.role} · Data refreshed {timeAgo(lastUpdated)}
-        </p>
+        <div className="flex items-center gap-3 mt-1">
+          <p className="text-slate-400 text-sm">
+            {user.role} · Data refreshed {timeAgo(lastUpdated)}
+          </p>
+          {isFromCache && (
+            <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+              cached
+            </span>
+          )}
+          {error && (
+            <span className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+              using mock data
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
+        {/* manual refresh button */}
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full px-4 py-2 text-slate-400 hover:text-white transition-all duration-200 text-xs font-medium"
+          >
+            ↻ Refresh
+          </button>
+        )}
+
         {/* live indicator */}
         <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -30,7 +55,7 @@ export function DashboardHeader({ user, lastUpdated }: Props) {
 
         {/* avatar */}
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
-          {user.name.split(' ').map(n => n[0]).join('')}
+          {user.name.split(' ').map((n: string) => n[0]).join('')}
         </div>
       </div>
     </div>

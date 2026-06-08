@@ -71,7 +71,12 @@ export async function createNewOrder(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: body.error.errors[0].message })
     }
 
-    const order = await createOrder(body.data)
+    const order = await createOrder(body.data as { 
+      clientId: string; 
+      amount: string; 
+      currency: string; 
+      description: string; 
+      metadata: Record<string, unknown>; })
     res.status(201).json({ success: true, data: order })
   } catch (err) {
     logger.error('createOrder failed', err, req.requestId)

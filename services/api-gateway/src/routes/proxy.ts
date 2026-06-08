@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
-import { requireRole } from '../middleware/auth.js'
+import { requireRole } from '../middleware/auth'
 
 const router = Router()
 

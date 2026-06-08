@@ -3,7 +3,7 @@ import {
   login, register, confirm,
   refresh, getProfile, logout,
   forgotPasswordHandler, resetPasswordHandler,
-} from '../controllers/authController.js'
+} from '../controllers/authController'
 
 const router = Router()
 

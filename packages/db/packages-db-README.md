@@ -64,7 +64,7 @@ cd packages/db
 npx prisma generate
 
 # run migrations (requires DATABASE_URL in .env)
-npx prisma migrate dev
+npx prisma migrate dev --name init
 
 # seed with sample data
 npm run db:seed

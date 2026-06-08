@@ -1,7 +1,7 @@
 import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
 import type { DashboardData, UserRole } from '@finmark/shared'
-import { getCache, setCache, CACHE_KEYS, TTL } from '../cache/redisClient.js'
+import { getCache, setCache, CACHE_KEYS, TTL } from '../cache/redisClient'
 
 const logger = createLogger('report-svc')
 

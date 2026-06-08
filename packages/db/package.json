@@ -15,10 +15,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "7.8.0",
+    "@prisma/client": "^6.19.3",
+    "dotenv": "^16.6.1",
     "node-cron": "4.2.1"
   },
   "devDependencies": {
+    "@types/node": "^25.9.2",
     "prisma": "^6.19.3"
   },
   "overrides": {

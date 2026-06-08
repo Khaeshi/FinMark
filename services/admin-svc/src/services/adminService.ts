@@ -5,7 +5,7 @@ import {
   getAdminCache, setAdminCache,
   invalidateAdminCache,
   ADMIN_CACHE_KEYS, ADMIN_TTL,
-} from '../cache/redisClient.js'
+} from '../cache/redisClient'
 
 const logger = createLogger('admin-svc:service')
 
@@ -18,7 +18,14 @@ const logger = createLogger('admin-svc:service')
 
 export async function getAllUsers(page = 1, limit = 50) {
   const cacheKey = ADMIN_CACHE_KEYS.allUsers()
-  const cached = await getAdminCache(cacheKey)
+  const cached = await getAdminCache<{
+    data: any[]
+    total: number
+    page: number
+    limit: number
+    hasMore: boolean
+  }>(cacheKey)
+  
   if (cached) return cached
 
   const [users, total] = await Promise.all([
@@ -117,7 +124,14 @@ export async function assignUserToClient(userId: string, clientId: string) {
 
 export async function getAllClients(page = 1, limit = 50) {
   const cacheKey = ADMIN_CACHE_KEYS.allClients()
-  const cached = await getAdminCache(cacheKey)
+  const cached = await getAdminCache<{
+    data: any[]
+    total: number
+    page: number
+    limit: number
+    hasMore: boolean
+  }>(cacheKey)
+
   if (cached) return cached
 
   const [clients, total] = await Promise.all([

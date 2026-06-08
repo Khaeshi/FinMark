@@ -1,6 +1,6 @@
 import express from 'express'
-import { productRoutes } from './routes/index.js'
-import { startConsumer } from './queue/productConsumer.js'
+import { productRoutes } from './routes/index'
+import { startConsumer } from './queue/productConsumer'
 import { createLogger } from '@finmark/shared'
 
 const app = express()

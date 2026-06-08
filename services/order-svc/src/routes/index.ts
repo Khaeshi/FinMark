@@ -2,7 +2,7 @@ import { Router } from 'express'
 import {
   listOrders, getOrder,
   createNewOrder, updateStatus, cancelOrderHandler,
-} from '../controllers/orderController.js'
+} from '../controllers/orderController'
 
 const router = Router()
 

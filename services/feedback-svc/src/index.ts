@@ -1,5 +1,5 @@
 import express from 'express'
-import { feedbackRoutes } from './routes/index.js'
+import { feedbackRoutes } from './routes/index'
 import { createLogger } from '@finmark/shared'
 
 const app = express()

@@ -5,7 +5,7 @@ import {
   Message
 } from '@aws-sdk/client-sqs'
 import { createLogger } from '@finmark/shared'
-import { handleOrderEvent } from '../services/productService.js'
+import { handleOrderEvent } from '../services/productService'
 
 const logger = createLogger('product-svc:consumer')
 

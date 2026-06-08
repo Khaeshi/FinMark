@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createFeedback, listFeedback, markResolved } from '../controllers/feedbackController.js'
+import { createFeedback, listFeedback, markResolved } from '../controllers/feedbackController'
 
 const router = Router()
 

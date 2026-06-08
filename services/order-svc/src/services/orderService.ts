@@ -2,7 +2,7 @@ import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
 import { Prisma } from '@prisma/client' 
 import type { OrderStatus } from '@finmark/shared'
-import { publishOrderEvent } from '../queue/orderProducer.js'
+import { publishOrderEvent } from '../queue/orderProducer'
 
 const logger = createLogger('order-svc:service')
 
@@ -107,10 +107,7 @@ export async function createOrder(data: {
       amount:      data.amount,
       currency:    data.currency || 'PHP',
       description: data.description,
-      metadata:    data.metadata
-      ? (data.metadata as Prisma.InputJsonValue)
-      : Prisma.JsonNull,
-      status:      'PENDING',
+      metadata: (data.metadata ?? Prisma.DbNull) as Prisma.InputJsonValue,
     },
   })
 
