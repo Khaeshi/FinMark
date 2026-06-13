@@ -5,7 +5,7 @@ import type { OrderStatus } from '@finmark/shared'
 import {
   getOrders, getOrderById,
   createOrder, updateOrderStatus, cancelOrder,
-} from '../services/orderService.js'
+} from '../services/orderService'
 
 const logger = createLogger('order-svc:controller')
 

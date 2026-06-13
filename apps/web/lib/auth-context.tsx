@@ -1,16 +1,9 @@
 'use client'
 import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
+  createContext, useContext,
+  useState, useEffect, useCallback,
 } from 'react'
 import type { UserRole } from '@finmark/shared'
-
-/**
- * Types
- */
 
 export interface AuthUser {
   id:        string
@@ -27,44 +20,44 @@ export interface AuthTokens {
 }
 
 interface AuthContextValue {
-  user:      AuthUser | null
-  tokens:    AuthTokens | null
-  isLoading: boolean
+  user:            AuthUser | null
+  tokens:          AuthTokens | null
+  isLoading:       boolean
   isAuthenticated: boolean
-  login:  (user: AuthUser, tokens: AuthTokens) => void
-  logout: () => void
+  login:           (user: AuthUser, tokens: AuthTokens) => void
+  logout:          () => void
 }
-
-/**
- * Context
- */
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const STORAGE_KEY_USER   = 'finmark_user'
-const STORAGE_KEY_TOKENS = 'finmark_tokens'
+const KEY_USER   = 'finmark_user'
+const KEY_TOKENS = 'finmark_tokens'
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+function setCookie(name: string, value: string, hours = 8) {
+  const expires = new Date(Date.now() + hours * 3600000).toUTCString()
+  document.cookie = `${name}=${value};expires=${expires};path=/;SameSite=Lax`
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user,      setUser]      = useState<AuthUser | null>(null)
   const [tokens,    setTokens]    = useState<AuthTokens | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // restore session from localStorage on app load
   useEffect(() => {
     try {
-      const storedUser   = localStorage.getItem(STORAGE_KEY_USER)
-      const storedTokens = localStorage.getItem(STORAGE_KEY_TOKENS)
-
+      const storedUser   = localStorage.getItem(KEY_USER)
+      const storedTokens = localStorage.getItem(KEY_TOKENS)
       if (storedUser && storedTokens) {
         setUser(JSON.parse(storedUser))
         setTokens(JSON.parse(storedTokens))
       }
     } catch {
-      // corrupted storage — clear it
-      localStorage.removeItem(STORAGE_KEY_USER)
-      localStorage.removeItem(STORAGE_KEY_TOKENS)
+      localStorage.removeItem(KEY_USER)
+      localStorage.removeItem(KEY_TOKENS)
     } finally {
       setIsLoading(false)
     }
@@ -73,15 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((newUser: AuthUser, newTokens: AuthTokens) => {
     setUser(newUser)
     setTokens(newTokens)
-    localStorage.setItem(STORAGE_KEY_USER,   JSON.stringify(newUser))
-    localStorage.setItem(STORAGE_KEY_TOKENS, JSON.stringify(newTokens))
+    localStorage.setItem(KEY_USER,   JSON.stringify(newUser))
+    localStorage.setItem(KEY_TOKENS, JSON.stringify(newTokens))
+    // also set cookie so Next.js middleware can read it
+    setCookie('finmark_token', newTokens.accessToken)
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
     setTokens(null)
-    localStorage.removeItem(STORAGE_KEY_USER)
-    localStorage.removeItem(STORAGE_KEY_TOKENS)
+    localStorage.removeItem(KEY_USER)
+    localStorage.removeItem(KEY_TOKENS)
+    deleteCookie('finmark_token')
     window.location.href = '/login'
   }, [])
 
@@ -98,11 +94,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
-/**
- * Hook
- * @returns ctx 
- */
 
 export function useAuth() {
   const ctx = useContext(AuthContext)

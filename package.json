@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev ",
     "dev:web": "turbo run dev --filter=@finmark/web",
     "dev:api": "turbo run dev --filter=@finmark/api-gateway",
     "dev:services": "turbo run dev --filter=./services/*",
@@ -29,7 +29,7 @@
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "^29.5.14",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11",
     "turbo": "^2.9.16",

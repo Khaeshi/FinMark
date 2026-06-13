@@ -3,21 +3,23 @@ import jwt from 'jsonwebtoken'
 import jwksRsa from 'jwks-rsa'
 import type { JwtPayload, UserRole } from '@finmark/shared'
 
-// extend express Request to carry the decoded user
 declare global {
   namespace Express {
     interface Request {
-      user?: JwtPayload
+      user?:      JwtPayload
       requestId?: string
     }
   }
 }
 
+const IS_DEV = process.env.NODE_ENV !== 'production'
+const DEV_SECRET = process.env.INTERNAL_SERVICE_SECRET || 'dev-secret-replace-in-production'
+
 const jwksClient = jwksRsa({
   jwksUri: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}/.well-known/jwks.json`,
   cache: true,
   cacheMaxEntries: 5,
-  cacheMaxAge: 600000, // 10 minutes
+  cacheMaxAge: 600000,
 })
 
 function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
@@ -27,12 +29,15 @@ function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) 
   })
 }
 
-// routes that don't need authentication
 const PUBLIC_ROUTES = [
-  { path: '/api/auth/login', method: 'POST' },
-  { path: '/api/auth/register', method: 'POST' },
-  { path: '/api/auth/refresh', method: 'POST' },
-  { path: '/health', method: 'GET' },
+  { path: '/api/auth/login',          method: 'POST' },
+  { path: '/api/auth/dev-login',      method: 'POST' },
+  { path: '/api/auth/register',       method: 'POST' },
+  { path: '/api/auth/confirm',        method: 'POST' },
+  { path: '/api/auth/refresh',        method: 'POST' },
+  { path: '/api/auth/forgot-password', method: 'POST' },
+  { path: '/api/auth/reset-password', method: 'POST' },
+  { path: '/health',                  method: 'GET' },
 ]
 
 function isPublicRoute(path: string, method: string): boolean {
@@ -42,15 +47,30 @@ function isPublicRoute(path: string, method: string): boolean {
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  // skip auth for public routes
   if (isPublicRoute(req.path, req.method)) return next()
 
   const authHeader = req.headers.authorization
   if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, error: 'Missing or invalid authorization header' })
+    return res.status(401).json({ success: false, error: 'Missing authorization header' })
   }
 
   const token = authHeader.split(' ')[1]
+
+  // ─── Dev token path (fast, no Cognito needed) ────────────────────────────
+  if (IS_DEV) {
+    try {
+      const decoded = jwt.verify(token, DEV_SECRET) as JwtPayload
+      req.user = decoded
+      return next()
+    } catch {
+      // not a dev token — fall through to Cognito verification
+    }
+  }
+
+  // ─── Production Cognito token path ───────────────────────────────────────
+  if (!process.env.COGNITO_USER_POOL_ID) {
+    return res.status(401).json({ success: false, error: 'Auth not configured' })
+  }
 
   jwt.verify(token, getSigningKey, {
     algorithms: ['RS256'],
@@ -59,13 +79,11 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     if (err) {
       return res.status(401).json({ success: false, error: 'Invalid or expired token' })
     }
-
     req.user = decoded as JwtPayload
     next()
   })
 }
 
-// role-based access control middleware factory
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

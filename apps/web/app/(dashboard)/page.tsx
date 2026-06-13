@@ -1,21 +1,47 @@
-import { MetricCard } from '@/components/dashboard/MetricCard'
-import { RevenueChart } from '@/components/dashboard/RevenueChart'
-import { OrderTable } from '@/components/dashboard/OrderTable'
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
-/**
- * MOCK_DASHBOARD for now
- * later it would be ->
- * const data = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`})
- * const { data: dashboard } = await response.json()
- */
-import { MOCK_DASHBOARD, MOCK_USER } from '@/lib/mockData'
+'use client'
+import { MetricCard }        from '@/components/dashboard/MetricCard'
+import { RevenueChart }      from '@/components/dashboard/RevenueChart'
+import { OrderTable }        from '@/components/dashboard/OrderTable'
+import { DashboardHeader }   from '@/components/dashboard/DashboardHeader'
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
+import { useDashboard }      from '@/hooks/useDashboard'
+import { useAuth }           from '@/lib/auth-context'
+import { MOCK_USER }         from '@/lib/mockData'
 
 export default function DashboardPage() {
-  const { summary, recentOrders, revenueChart, lastUpdated } = MOCK_DASHBOARD
+  const { data, isLoading, error, isFromCache, isMock, refetch } = useDashboard()
+  const { user } = useAuth()
+
+  const displayUser = user
+    ? { name: user.name, role: user.role }
+    : MOCK_USER
+
+  if (isLoading) return <DashboardSkeleton />
+
+  if (!data) return (
+    <div className="p-8 flex flex-col items-center justify-center h-full gap-3">
+      <p className="text-slate-400">No dashboard data available.</p>
+      <button
+        onClick={refetch}
+        className="text-emerald-400 text-sm hover:text-emerald-300 transition-colors"
+      >
+        Try again
+      </button>
+    </div>
+  )
+
+  const { summary, recentOrders, revenueChart, lastUpdated } = data
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
-      <DashboardHeader user={MOCK_USER} lastUpdated={lastUpdated} />
+      <DashboardHeader
+        user={displayUser}
+        lastUpdated={lastUpdated}
+        isFromCache={isFromCache}
+        isMock={isMock}
+        onRefresh={refetch}
+        error={error}
+      />
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
