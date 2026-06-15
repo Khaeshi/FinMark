@@ -8,6 +8,7 @@ dist/
 .next/
 out/
 build/
+tsconfig.tsbuildinfo
 
 # env files — NEVER commit these
 .env

@@ -7,11 +7,13 @@ import {
   confirmForgotPassword, signOut,
   getUserFromToken,
 } from '../services/cognitoService'
-import { syncUserToDatabase, getUserProfile, logAuditEvent } from '../services/sessionService.js'
+import { syncUserToDatabase, getUserProfile, logAuditEvent } from '../services/sessionService'
 
 const logger = createLogger('user-auth-svc:controller')
 
-// ─── Validation Schemas ───────────────────────────────────────────────────────
+/**
+ * Validation Schema
+ */
 const LoginSchema = z.object({
   email:    z.string().email(),
   password: z.string().min(8),
@@ -32,7 +34,12 @@ const RefreshSchema = z.object({
   refreshToken: z.string(),
 })
 
-// ─── Login ────────────────────────────────────────────────────────────────────
+/**
+ * Login
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function login(req: Request, res: Response) {
   try {
     const body = LoginSchema.safeParse(req.body)
@@ -99,7 +106,12 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-// ─── Register ─────────────────────────────────────────────────────────────────
+/**
+ * Register
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function register(req: Request, res: Response) {
   try {
     const body = RegisterSchema.safeParse(req.body)
@@ -162,7 +174,12 @@ export async function confirm(req: Request, res: Response) {
   }
 }
 
-// ─── Refresh Token ────────────────────────────────────────────────────────────
+/**
+ * Refresh Token
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function refresh(req: Request, res: Response) {
   try {
     const body = RefreshSchema.safeParse(req.body)
@@ -178,7 +195,12 @@ export async function refresh(req: Request, res: Response) {
   }
 }
 
-// ─── Get Profile ──────────────────────────────────────────────────────────────
+/**
+ * Get Profile
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function getProfile(req: Request, res: Response) {
   try {
     const profile = await getUserProfile(req.user!.sub)
@@ -192,7 +214,12 @@ export async function getProfile(req: Request, res: Response) {
   }
 }
 
-// ─── Logout ───────────────────────────────────────────────────────────────────
+/**
+ * Log out 
+ * @param req 
+ * @param res 
+ * @returns 
+ */
 export async function logout(req: Request, res: Response) {
   try {
     const authHeader = req.headers.authorization
@@ -208,19 +235,28 @@ export async function logout(req: Request, res: Response) {
   }
 }
 
-// ─── Forgot Password ──────────────────────────────────────────────────────────
+/**
+ * Forgot Password
+ * @param req Request email 
+ * @param res 
+ * @returns always returns success, email exists should'nt be revealed here 
+ */
 export async function forgotPasswordHandler(req: Request, res: Response) {
   try {
     const { email } = z.object({ email: z.string().email() }).parse(req.body)
     await forgotPassword(email)
-    // always return success — don't reveal if email exists
     return res.json({ success: true, message: 'If that email exists, a reset code has been sent.' })
   } catch (err) {
     return res.json({ success: true, message: 'If that email exists, a reset code has been sent.' })
   }
 }
 
-// ─── Reset Password ───────────────────────────────────────────────────────────
+/**
+ * Reset Password
+ * @param req Request email
+ * @param res Confirm new Password
+ * @returns Success when reset is complete
+ */
 export async function resetPasswordHandler(req: Request, res: Response) {
   try {
     const body = z.object({
