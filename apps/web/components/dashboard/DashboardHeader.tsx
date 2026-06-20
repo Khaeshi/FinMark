@@ -28,7 +28,7 @@ export function DashboardHeader({
           </p>
           {isFromCache && !isMock && (
             <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
-              ⚡ cached
+              Redis cached
             </span>
           )}
           {isMock && (

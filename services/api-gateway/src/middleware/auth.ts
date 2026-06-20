@@ -30,20 +30,23 @@ function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) 
 }
 
 const PUBLIC_ROUTES = [
-  { path: '/api/auth/login',          method: 'POST' },
-  { path: '/api/auth/dev-login',      method: 'POST' },
-  { path: '/api/auth/register',       method: 'POST' },
-  { path: '/api/auth/confirm',        method: 'POST' },
-  { path: '/api/auth/refresh',        method: 'POST' },
-  { path: '/api/auth/forgot-password', method: 'POST' },
-  { path: '/api/auth/reset-password', method: 'POST' },
+  { path: '/auth/login',          method: 'POST' },
+  { path: '/auth/dev-login',      method: 'POST' },
+  { path: '/auth/register',       method: 'POST' },
+  { path: '/auth/confirm',        method: 'POST' },
+  { path: '/auth/refresh',        method: 'POST' },
+  { path: '/auth/forgot-password', method: 'POST' },
+  { path: '/auth/reset-password', method: 'POST' },
   { path: '/health',                  method: 'GET' },
 ]
 
 function isPublicRoute(path: string, method: string): boolean {
-  return PUBLIC_ROUTES.some(
+  console.log('Checking path:', path, method)
+  const match = PUBLIC_ROUTES.some(
     route => path.startsWith(route.path) && route.method === method
   )
+  console.log('Is public:', match)  // ← add this line
+  return match
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {

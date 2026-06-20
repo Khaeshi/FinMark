@@ -304,10 +304,10 @@ k6 run tests/load/k6/dashboard.js
 ### Financial Data Rule
 
 ```typescript
-// ❌ NEVER do this with money
+// NEVER do this with money
 const total = 1250.50 + 340.20  // float precision errors
 
-// ✅ ALWAYS use the shared decimal utility
+// ALWAYS use the shared decimal utility
 import { addAmounts } from '@finmark/shared'
 const total = addAmounts('1250.50', '340.20')
 ```

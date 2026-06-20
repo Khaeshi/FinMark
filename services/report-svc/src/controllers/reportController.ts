@@ -9,9 +9,10 @@ export async function getDashboard(req: Request, res: Response) {
     const { sub: userId, clientId, role } = req.user!
     const data = await getDashboardData(userId, clientId, role)
     res.json({ success: true, data })
-  } catch (err) {
+  } catch (err: any) {
+    console.error('FULL DASHBOARD ERROR:', err)   // ← add this
     logger.error('getDashboard failed', err, req.requestId)
-    res.status(500).json({ success: false, error: 'Failed to load dashboard' })
+    res.status(500).json({ success: false, error: 'Failed to load dashboard', detail: err.message })
   }
 }
 

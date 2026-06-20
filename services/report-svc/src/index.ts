@@ -2,6 +2,7 @@ import express from 'express'
 import { reportRoutes } from './routes/index'
 import { startRefreshJob } from './jobs/refreshMaterialized'
 import { createLogger } from '@finmark/shared'
+import { userContext } from './middleware/userContext'
 
 const app = express()
 const PORT = process.env.REPORT_SVC_PORT || 4003
@@ -15,6 +16,7 @@ app.get('/health', (req, res) => {
 })
 
 // routes
+app.use(userContext)
 app.use('/', reportRoutes)
 
 // start materialized view refresh scheduler

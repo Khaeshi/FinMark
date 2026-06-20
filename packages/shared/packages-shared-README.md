@@ -50,10 +50,10 @@ Never use JavaScript floating point for money. Use the `decimal.ts` utilities:
 ```typescript
 import { addAmounts, subtractAmounts, formatCurrency } from '@finmark/shared'
 
-// ✅ correct — uses BigInt cents internally
+// correct — uses BigInt cents internally
 const total = addAmounts('1250.50', '340.20')  // → '1590.70'
 
-// ❌ wrong — float precision errors
+// wrong — float precision errors
 const total = 1250.50 + 340.20  // → 1590.6999999999998
 ```
 

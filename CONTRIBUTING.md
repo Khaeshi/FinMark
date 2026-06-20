@@ -265,7 +265,7 @@ Every new component must follow this palette. Do not introduce new colors withou
 - All components must be TypeScript with explicit prop interfaces:
 
 ```tsx
-// ✅ correct
+
 interface Props {
   label: string
   value: number
@@ -286,7 +286,7 @@ export function MetricCard(props: any) { ... }
 Always import types from `@finmark/shared`, never redefine them:
 
 ```tsx
-// ✅ correct
+
 import type { Order, DashboardData } from '@finmark/shared'
 
 // ❌ wrong — do not copy-paste type definitions

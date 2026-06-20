@@ -25,7 +25,12 @@ async function apiFetch<T>(
   return res.json()
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+/**
+ * Auth
+ * @param email 
+ * @param password 
+ * @returns 
+ */
 
 export async function loginRequest(email: string, password: string) {
   // use dev-login endpoint in development — no Cognito needed
@@ -65,7 +70,11 @@ export async function refreshTokenRequest(refreshToken: string) {
   return res.data!
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
+/**
+ * Dashboard
+ * @param token 
+ * @returns 
+ */
 
 export async function fetchDashboard(token: string): Promise<DashboardData> {
   const res = await apiFetch<ApiResponse<DashboardData>>('/dashboard', {}, token)
@@ -73,7 +82,12 @@ export async function fetchDashboard(token: string): Promise<DashboardData> {
   return res.data
 }
 
-// ─── Orders ───────────────────────────────────────────────────────────────────
+/**
+ * Orders
+ * @param token 
+ * @param params 
+ * @returns 
+ */
 
 export async function fetchOrders(
   token: string,

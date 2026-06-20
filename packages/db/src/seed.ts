@@ -1,3 +1,5 @@
+// AI generated seed by claude
+
 import { PrismaClient, UserRole, OrderStatus, SubscriptionTier } from '@prisma/client'
 
 const prisma = new PrismaClient()

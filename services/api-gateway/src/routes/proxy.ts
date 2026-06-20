@@ -4,7 +4,10 @@ import { requireRole } from '../middleware/auth'
 
 const router = Router()
 
-// service URLs — in production these come from env/service discovery
+/**
+ * Service URLs - in production these comes from env/service discovery,
+ * the hardcoded localhost will be remove by me once production hits
+ */
 const SERVICES = {
   auth:     process.env.USER_AUTH_SVC_URL    || 'http://localhost:4001',
   orders:   process.env.ORDER_SVC_URL        || 'http://localhost:4002',
@@ -14,17 +17,35 @@ const SERVICES = {
   feedback: process.env.FEEDBACK_SVC_URL     || 'http://localhost:4006',
 }
 
-function makeProxy(target: string) {
+function makeProxy(target: string, rewrite?: Record<string, string>) {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
+    proxyTimeout: 5000,
+    timeout: 5000,
+    pathRewrite: rewrite,
     on: {
+      proxyReq: (proxyReq, req: any) => {
+        // forward decoded user info to downstream services
+        if (req.user) {
+          proxyReq.setHeader('x-user-id', req.user.sub)
+          proxyReq.setHeader('x-user-role', req.user.role)
+          if (req.user.clientId) {
+            proxyReq.setHeader('x-user-client-id', req.user.clientId)
+          }
+        }
+
+        if (req.body && Object.keys(req.body).length > 0) {
+          const bodyData = JSON.stringify(req.body)
+          proxyReq.setHeader('Content-Type', 'application/json')
+          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData))
+          proxyReq.write(bodyData)
+        }
+      },
       error: (err, req, res: any) => {
         console.error(JSON.stringify({
-          level: 'error',
-          service: 'api-gateway',
-          message: `Proxy error to ${target}`,
-          error: err.message,
+          level: 'error', service: 'api-gateway',
+          message: `Proxy error to ${target}`, error: err.message,
           timestamp: new Date().toISOString(),
         }))
         res.status(503).json({ success: false, error: 'Service temporarily unavailable' })
@@ -36,7 +57,7 @@ function makeProxy(target: string) {
 /**
  * Auth Service
  */
-router.use('/auth', makeProxy(SERVICES.auth))
+router.use('/auth', makeProxy(SERVICES.auth,  { '^/api/auth': '' }))
 
 /**
  * Orders Service
@@ -44,7 +65,7 @@ router.use('/auth', makeProxy(SERVICES.auth))
 router.use(
   '/orders',
   requireRole('SUPERADMIN', 'ADMIN', 'OPERATIONS'),
-  makeProxy(SERVICES.orders)
+  makeProxy(SERVICES.orders,   { '^/api/orders': '' })
 )
 
 /**
@@ -53,7 +74,7 @@ router.use(
 router.use(
   '/reports',
   requireRole('SUPERADMIN', 'ADMIN', 'FINANCE', 'ANALYST'),
-  makeProxy(SERVICES.reports)
+  makeProxy(SERVICES.reports,  { '^/api/reports': '' })
 )
 
 /**
@@ -62,7 +83,7 @@ router.use(
 router.use(
   '/products',
   requireRole('SUPERADMIN', 'ADMIN', 'OPERATIONS'),
-  makeProxy(SERVICES.products)
+  makeProxy(SERVICES.products, { '^/api/products': '' })
 )
 
 /**
@@ -71,13 +92,13 @@ router.use(
 router.use(
   '/admin',
   requireRole('SUPERADMIN', 'ADMIN'),
-  makeProxy(SERVICES.admin)
+  makeProxy(SERVICES.admin,    { '^/api/admin': '' })
 )
 
 /**
  * Feedback Service
  */
-router.use('/feedback', makeProxy(SERVICES.feedback))
+router.use('/feedback', makeProxy(SERVICES.feedback, { '^/api/feedback': '' }))
 
 /**
  * Dashboard
@@ -85,7 +106,7 @@ router.use('/feedback', makeProxy(SERVICES.feedback))
 router.use(
   '/dashboard',
   requireRole('SUPERADMIN', 'ADMIN', 'FINANCE', 'OPERATIONS', 'ANALYST', 'VIEWER'),
-  makeProxy(SERVICES.reports)   // report-svc owns dashboard data
+  makeProxy(SERVICES.reports, { '^/': '/dashboard' })
 )
 
 export { router as proxyRoutes }
