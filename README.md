@@ -296,7 +296,7 @@ k6 run tests/load/k6/dashboard.js
 
 ### TypeScript Rules
 
-- Never use `any` — use `unknown` and narrow the type
+- Never use `any` — use `unknown` and narrow the type, the specific is better
 - Always use `Decimal` (never `number` or `float`) for financial amounts
 - Import shared types from `@finmark/shared`, never redefine them locally
 - Enable strict mode — it is already configured in all `tsconfig.json` files
@@ -335,7 +335,7 @@ Each major folder has its own README:
 | **Course** | Platform Technologies |
 | **Project** | Project Finer — FinMark Platform |
 | **Team Size** | 5 members |
-| **Architecture** | Microservices, Cloud-Native |
+| **Architecture** | Microservices, Cloud-Native, MonoRepo |
 | **Methodology** | Git-Based Collaborative Development |
 
 ## 👥 Team Members & Roles
@@ -349,9 +349,8 @@ This project is a collaborative effort by the following team members:
 | **Dorin Castillo** | QA Engineer / <br>MS3 Lead | Day-to-day test automation, bug tracking, and final deployment verification. **Milestone 3 Lead which evaluate, audit, and sign off on the entire project build.** | [@grahamcrackers123](https://github/Denise) |
 | **Mikko Jerome Bautista** | Lead UX Designer | User research, journey mapping, wireframing, and accessibility compliance (WCAG) | [@](https://github) |
 | **Denise Claire Monghit** | Software Documentor / Presenter | Technical documentation, API reference guides, user manuals, and final project presentations. | [@](https://github) |
-| **Christian John Batuigas** | Lead AWS Architecture / Lead UI Designer / MS1 Lead | High-fidelity mockups, Design System management, component styling, and asset export. | [@](https://github) |
+| **Christian John Batuigas** | Lead AWS Architecture / MS1 Lead | High-fidelity mockups, Design System management, component styling, and asset export. | [@](https://github) |
 | **John Wilberth Botin** | Network/Cyber Security Specialist | | [@](https://github.com) |
-
 
 ---
 

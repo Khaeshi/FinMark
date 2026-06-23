@@ -93,7 +93,7 @@ npm run dev
 
 ## report-svc — The Critical Service
 
-The `report-svc` is the most important service for performance. It directly solves the 20-second dashboard problem through:
+The `report-svc` is the most important service for performance of my team's overall project. It directly solves the 20-second dashboard problem through:
 
 1. **Cache-first strategy** — checks Redis before querying the database
 2. **Materialized views** — pre-computed PostgreSQL views refresh every 2 minutes
