@@ -1,3 +1,8 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
+
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import jwksRsa from 'jwks-rsa'

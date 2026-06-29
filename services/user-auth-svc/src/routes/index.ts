@@ -1,3 +1,7 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
 import { Router } from 'express'
 import {
   login, register, confirm,
@@ -8,16 +12,19 @@ import { devLogin } from '../controllers/devAuthController'
 
 const router = Router()
 
-// ─── Dev bypass (no Cognito needed) ──────────────────────────────────────────
+/**
+ * Dev Bypass (no Cognito mode)
+ */
 if (process.env.NODE_ENV !== 'production') {
   router.post('/dev-login', devLogin)
 }
-
-// ─── Real auth routes (require Cognito) ──────────────────────────────────────
-router.post('/login',           login)
-router.post('/register',        register)
-router.post('/confirm',         confirm)
-router.post('/refresh',         refresh)
+/**
+ * Real auth Routes (requires Cognito)
+ */
+router.post('/login', login)
+router.post('/register', register)
+router.post('/confirm', confirm)
+router.post('/refresh', refresh)
 router.post('/forgot-password', forgotPasswordHandler)
 router.post('/reset-password',  resetPasswordHandler)
 

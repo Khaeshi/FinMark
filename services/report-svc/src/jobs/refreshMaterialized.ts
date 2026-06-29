@@ -1,3 +1,8 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
+
 import cron from 'node-cron'
 import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'

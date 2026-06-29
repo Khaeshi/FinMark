@@ -1,3 +1,7 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
 import {
   SQSClient,
   SendMessageCommand,

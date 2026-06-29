@@ -1,3 +1,7 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
 import { prisma } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
 import type { UserRole } from '@finmark/shared'

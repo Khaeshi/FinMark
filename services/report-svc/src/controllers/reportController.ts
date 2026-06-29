@@ -1,3 +1,7 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
 import { Request, Response } from 'express'
 import { getDashboardData, getFinancialSummary } from '../services/reportService'
 import { createLogger } from '@finmark/shared'

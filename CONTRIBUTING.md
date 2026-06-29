@@ -156,6 +156,22 @@ chore(deps): update recharts to 2.15.3
 - Keep the description under 72 characters
 - Do not end with a period
 - Do not use vague messages like "fix stuff", "update", "changes", "wip"
+- When creating a new code file, updating existing code, ALWAYS add yourself as author on top of the new code file, if existing, still put yourself as author but on second line
+
+### Examples
+```bash
+// For new files
+/**
+  * @author your-name
+  */
+
+// For existing files
+/**
+  * @author Khaesey Angel Tablante
+  * @author your-name
+  */
+
+```
 
 ---
 

@@ -1,3 +1,7 @@
+/**
+ * @author Khaesey Angel Tablante
+ */
+
 import { Router } from 'express'
 import { getDashboard, getFinancials } from '../controllers/reportController'
 

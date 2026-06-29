@@ -1,3 +1,10 @@
+/**
+ * @author Khaesey Angel Tablante
+ * @desc with codes generated from Claude
+ */
+
+
+
 import rateLimit from 'express-rate-limit'
 
 // general API rate limit — 200 employees, generous limit
