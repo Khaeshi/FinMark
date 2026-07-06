@@ -1,4 +1,5 @@
 /**
+ * @author Khaesey Angel Tablante
  * User Auth
  */
 
@@ -9,11 +10,11 @@ export interface AuthUser {
   email: string
   name: string
   role: UserRole
-  clientId?: string // which SME client this user belongs to
+  clientId?: string 
 }
 
 export interface JwtPayload {
-  sub: string       // user id
+  sub: string      
   email: string
   role: UserRole
   clientId?: string
@@ -51,7 +52,7 @@ export interface Order {
   id: string
   clientId: string
   status: OrderStatus
-  amount: string        // always string for Decimal — never number
+  amount: string        
   currency: string
   description?: string | null
   createdAt: Date
@@ -64,8 +65,8 @@ export interface Order {
 
 export interface FinancialSummary {
   clientId: string
-  period: string        // e.g. "2024-Q1"
-  totalRevenue: string  // Decimal as string
+  period: string        
+  totalRevenue: string  
   totalExpenses: string
   netProfit: string
   orderCount: number

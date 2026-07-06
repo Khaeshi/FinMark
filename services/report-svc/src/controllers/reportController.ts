@@ -3,7 +3,7 @@
  */
 
 import { Request, Response } from 'express'
-import { getDashboardData, getFinancialSummary } from '../services/reportService'
+import { getDashboardData, getFinancialSummary, getAllFinancialRecords } from '../services/reportService'
 import { createLogger } from '@finmark/shared'
 
 const logger = createLogger('report-svc:controller')
@@ -38,5 +38,25 @@ export async function getFinancials(req: Request, res: Response) {
   } catch (err) {
     logger.error('getFinancials failed', err, req.requestId)
     res.status(500).json({ success: false, error: 'Failed to load financials' })
+  }
+}
+
+/**
+ * @author Khaesey Angel Tablante
+ * @description Get all financial records for all clients
+ * @wired to /reports-svc/src/routes/index.ts
+ */
+export async function getAllFinancials(req: Request, res: Response) {
+  try {
+    const { role, clientId } = req.user!
+    const filterClientId = ['SUPERADMIN', 'ADMIN'].includes(role)
+      ? undefined
+      : clientId
+
+    const data = await getAllFinancialRecords(filterClientId)
+    res.json({ success: true, data })
+  } catch (err) {
+    logger.error('getAllFinancials failed', err, req.requestId)
+    res.status(500).json({ success: false, error: 'Failed to load financial records' })
   }
 }

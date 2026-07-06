@@ -118,3 +118,27 @@ export async function getFinancialSummary(clientId: string, period: string) {
   if (data) await setCache(cacheKey, data, TTL.FINANCIALS)
   return data
 }
+/**
+ * @author Khaesey Angel Tablante
+ * @description Get all financial records for all clients
+ * @wired to ./controllers/reportController.ts
+ * @param clientId 
+ * @returns Promise<FinancialRecord[]>
+ */
+
+export async function getAllFinancialRecords(clientId?: string) {
+  const records = await prisma.financial.findMany({
+    where:   clientId ? { clientId } : {},
+    orderBy: [{ clientId: 'asc' }, { period: 'desc' }],
+    include: {
+      client: { select: { name: true, industry: true } },
+    },
+  })
+
+  return records.map(f => ({
+    ...f,
+    revenue:   f.revenue.toString(),
+    expenses:  f.expenses.toString(),
+    netProfit: f.netProfit.toString(),
+  }))
+}

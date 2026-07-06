@@ -1,6 +1,7 @@
 import express from 'express'
 import { orderRoutes } from './routes/index'
 import { createLogger } from '@finmark/shared'
+import { userContext } from './middleware/userContext' 
 
 const app = express()
 const PORT = process.env.ORDER_SVC_PORT || 4002
@@ -8,9 +9,12 @@ const logger = createLogger('order-svc')
 
 app.use(express.json())
 
-app.get('/health', (req, res) => {
+// ← add this before routes
+app.use('/health', (req, res) => {
   res.json({ success: true, service: 'order-svc', status: 'healthy' })
 })
+
+app.use(userContext)   // ← add this
 
 app.use('/', orderRoutes)
 

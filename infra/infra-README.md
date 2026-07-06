@@ -49,7 +49,7 @@ DATABASE_URL=postgresql://finmark_user:password@localhost:5432/finmark_dev
 REDIS_URL=redis://localhost:6379
 ```
 
-Alternatively, use **Neon** (free serverless PostgreSQL) instead of local Docker for the database — ask Khael for the connection string.
+Alternatively, use **Neon** (free serverless PostgreSQL) instead of local Docker for the database — ask Khaeshi for the connection string.
 
 ---
 
