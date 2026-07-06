@@ -104,3 +104,47 @@ export async function fetchOrders(
   if (!res.data) throw new Error('No orders data returned')
   return res.data
 }
+
+/**
+ * Clients
+ * @param token
+ * @returns
+ */
+
+export interface SMEClient {
+  id:               string
+  name:             string
+  industry:         string
+  country:          string
+  subscriptionTier: string
+  isActive:         boolean
+  createdAt:        string
+  _count?: { users: number; orders: number }
+}
+
+export async function fetchClients(token: string): Promise<{ data: SMEClient[]; total: number }> {
+  const res = await apiFetch<ApiResponse<SMEClient[]> & { total?: number }>('/admin/clients', {}, token)
+  return { data: res.data || [], total: res.total ?? (res.data?.length || 0) }
+}
+
+/**
+ * Reports
+ * @param token
+ * @returns
+ */
+
+export interface FinancialRecord {
+  id:          string
+  clientId:    string
+  period:      string
+  revenue:     string
+  expenses:    string
+  netProfit:   string
+  orderCount:  number
+  client?:     { name: string; industry: string }
+}
+
+export async function fetchFinancialReports(token: string): Promise<FinancialRecord[]> {
+  const res = await apiFetch<ApiResponse<FinancialRecord[]>>('/reports/financials', {}, token)
+  return res.data || []
+}

@@ -1,6 +1,8 @@
 'use client'
+import { sileo } from 'sileo'
 import { useReports } from '@/hooks/useReports'
 import { formatPHP } from '@/lib/format'
+import { ReportsSkeleton } from '@/components/dashboard/ReportsSkeleton'
 
 interface FinancialItem {
   id?:        string
@@ -15,7 +17,9 @@ interface FinancialItem {
 
 export default function ReportsPage() {
   const { financials, isLoading, error, refetch } = useReports();
-  
+
+  if (isLoading && financials.length === 0) return <ReportsSkeleton />
+
   const typedFinancials = financials as FinancialItem[];
 
   const totalRevenue  = typedFinancials.reduce((sum, f) => sum + parseFloat(f.revenue  || '0'), 0)
@@ -28,12 +32,11 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-slate-400 font-medium tracking-widest uppercase mb-1">Finmark — Project Finer</p>
           <h1 className="text-2xl font-bold text-white">Financial Reports</h1>
           <p className="text-slate-400 text-sm mt-1">Quarterly financial summaries per SME client</p>
         </div>
         <button
-          onClick={refetch}
+          onClick={() => { refetch(); sileo.success({ title: 'Reports refreshed' }) }}
           className="text-xs px-4 py-2 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10 hover:text-white transition-all"
         >
           ↻ Refresh

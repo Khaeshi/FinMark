@@ -1,12 +1,13 @@
 'use client'
-import { MetricCard }        from '@/components/dashboard/MetricCard'
-import { RevenueChart }      from '@/components/dashboard/RevenueChart'
-import { OrderTable }        from '@/components/dashboard/OrderTable'
-import { DashboardHeader }   from '@/components/dashboard/DashboardHeader'
+import { sileo } from 'sileo'
+import { MetricCard } from '@/components/dashboard/MetricCard'
+import { RevenueChart } from '@/components/dashboard/RevenueChart'
+import { OrderTable } from '@/components/dashboard/OrderTable'
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
-import { useDashboard }      from '@/hooks/useDashboard'
-import { useAuth }           from '@/lib/auth-context'
-import { MOCK_USER }         from '@/lib/mockData'
+import { useDashboard } from '@/hooks/useDashboard'
+import { useAuth } from '@/lib/auth-context'
+import { MOCK_USER } from '@/lib/mockData'
 
 export default function DashboardPage() {
   const { data, isLoading, error, isFromCache, isMock, refetch } = useDashboard()
@@ -39,12 +40,12 @@ export default function DashboardPage() {
         lastUpdated={lastUpdated}
         isFromCache={isFromCache}
         isMock={isMock}
-        onRefresh={refetch}
+        onRefresh={() => { refetch(); sileo.success({ title: 'Dashboard refreshed' }) }}
         error={error}
       />
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 min-w-0">
         <MetricCard
           label="Total Revenue"
           value={summary.totalRevenue}
@@ -81,10 +82,10 @@ export default function DashboardPage() {
 
       {/* Charts + Table */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
+        <div className="xl:col-span-2 min-w-0">
           <RevenueChart data={revenueChart} />
         </div>
-        <div className="xl:col-span-1">
+        <div className="xl:col-span-1 min-w-0">
           <OrderTable orders={recentOrders} />
         </div>
       </div>

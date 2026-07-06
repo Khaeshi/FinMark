@@ -213,6 +213,10 @@ npm run lint      # run ESLint
 
 ---
 
+## Using Sileo Toast
+This metric uses Sileo Toast instead of the commonly used sonner, please visit the docs for usage guide.
+[Sileo Docs](https://sileo.aaryan.design/)
+
 ## Formatting Utilities
 
 Use helpers from `lib/format.ts` for consistent data display:

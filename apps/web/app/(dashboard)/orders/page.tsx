@@ -1,6 +1,7 @@
 'use client'
 import { useOrders } from '@/hooks/useOrders'
 import { formatPHP, timeAgo } from '@/lib/format'
+import { OrdersSkeleton } from '@/components/dashboard/OrdersSkeleton'
 import type { OrderStatus } from '@finmark/shared'
 
 const STATUS_STYLES: Record<string, string> = {
@@ -17,13 +18,14 @@ const ALL_STATUSES: (OrderStatus | 'ALL')[] = ['ALL', 'PENDING', 'CONFIRMED', 'P
 export default function OrdersPage() {
   const { orders, total, isLoading, error, page, hasMore, setPage, setStatus, status } = useOrders()
 
+  if (isLoading && orders.length === 0) return <OrdersSkeleton />
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <p className="text-xs text-slate-400 font-medium tracking-widest uppercase mb-1">Finmark — Project Finer</p>
           <h1 className="text-2xl font-bold text-white">Orders</h1>
           <p className="text-slate-400 text-sm mt-1">{total} total orders</p>
         </div>
