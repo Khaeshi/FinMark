@@ -37,7 +37,8 @@ export const LoginSchema = z.object({
               .trim(),
   password: z.string({ error: 'Password is required' })
               .min(1, 'Password is required')
-              .min(6, 'Password must be at least 6 characters'),
+              .min(6, 'Password must be at least 6 characters')
+              .max(128, 'Password is too long'),
 })
 
 export const RegisterSchema = z.object({

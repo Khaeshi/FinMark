@@ -18,11 +18,11 @@ interface UseDashboardResult {
 
 export function useDashboard(): UseDashboardResult {
   const { tokens } = useAuth()
-  const [data,        setData]        = useState<DashboardData | null>(null)
-  const [isLoading,   setIsLoading]   = useState(true)
-  const [error,       setError]       = useState<string | null>(null)
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [isLoading,   setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [isFromCache, setIsFromCache] = useState(false)
-  const [isMock,      setIsMock]      = useState(false)
+  const [isMock, setIsMock] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)

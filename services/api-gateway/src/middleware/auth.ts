@@ -35,14 +35,14 @@ function getSigningKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) 
 }
 
 const PUBLIC_ROUTES = [
-  { path: '/auth/login',          method: 'POST' },
-  { path: '/auth/dev-login',      method: 'POST' },
-  { path: '/auth/register',       method: 'POST' },
-  { path: '/auth/confirm',        method: 'POST' },
-  { path: '/auth/refresh',        method: 'POST' },
+  { path: '/auth/login', method: 'POST' },
+  { path: '/auth/dev-login', method: 'POST' },
+  { path: '/auth/register', method: 'POST' },
+  { path: '/auth/confirm', method: 'POST' },
+  { path: '/auth/refresh', method: 'POST' },
   { path: '/auth/forgot-password', method: 'POST' },
   { path: '/auth/reset-password', method: 'POST' },
-  { path: '/health',                  method: 'GET' },
+  { path: '/health', method: 'GET' },
 ]
 
 function isPublicRoute(path: string, method: string): boolean {
@@ -50,7 +50,7 @@ function isPublicRoute(path: string, method: string): boolean {
   const match = PUBLIC_ROUTES.some(
     route => path.startsWith(route.path) && route.method === method
   )
-  console.log('Is public:', match)  // ← add this line
+  console.log('Is public:', match)  
   return match
 }
 
@@ -64,7 +64,9 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   const token = authHeader.split(' ')[1]
 
-  // ─── Dev token path (fast, no Cognito needed) ────────────────────────────
+  /**
+   * Dev token path
+   */
   if (IS_DEV) {
     try {
       const decoded = jwt.verify(token, DEV_SECRET) as JwtPayload
@@ -75,7 +77,9 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
     }
   }
 
-  // ─── Production Cognito token path ───────────────────────────────────────
+  /**
+   * Production Cognito token path
+   */
   if (!process.env.COGNITO_USER_POOL_ID) {
     return res.status(401).json({ success: false, error: 'Auth not configured' })
   }

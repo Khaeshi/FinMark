@@ -9,8 +9,6 @@ import type { UserRole } from '@finmark/shared'
 
 /* ------------------------------------------------------------------ */
 /*  Eye-tracking cartoon characters — kept from the reference design, */
-/*  recolored to Finmark's dark/emerald palette instead of a generic  */
-/*  purple/orange/yellow scheme.                                      */
 /* ------------------------------------------------------------------ */
 
 interface PupilProps {
@@ -304,10 +302,9 @@ function CastOfCharacters({
   )
 }
 
-/* ------------------------------------------------------------------ */
-/*  Real login form logic — unchanged from the previous page, just    */
-/*  restyled to sit in the right-hand panel of the split layout.      */
-/* ------------------------------------------------------------------ */
+/**
+ * Validation
+ */
 
 interface FieldErrors { email?: string; password?: string; general?: string }
 
@@ -315,7 +312,7 @@ function validateForm(email: string, password: string): FieldErrors {
   const errors: FieldErrors = {}
   if (!email || email.trim() === '') {
     errors.email = 'Email is required'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{3,}$/.test(email.trim())) {
     errors.email = 'Please enter a valid email address'
   }
   if (!password || password === '') {
@@ -325,6 +322,10 @@ function validateForm(email: string, password: string): FieldErrors {
   }
   return errors
 }
+
+/**
+ * Login Page 
+ */
 
 export default function LoginPage() {
   const router = useRouter()

@@ -91,7 +91,7 @@ npm run dev
 
 ---
 
-## report-svc — The Critical Service
+## report-svc 
 
 The `report-svc` is the most important service for performance of my team's overall project. It directly solves the 20-second dashboard problem through:
 

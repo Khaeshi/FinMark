@@ -15,7 +15,9 @@ const logger = createLogger('order-svc:controller')
 
 const CreateOrderSchema = z.object({
   clientId:    z.string().min(1),
-  amount:      z.string().regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format'),
+  amount:      z.string()
+                .regex(/^\d+(\.\d{1,2})?$/, 'Invalid amount format') 
+                .refine(val => parseFloat(val) > 0, 'Amount must be greater than 0'),
   currency:    z.string().length(3).optional(),
   description: z.string().max(255).optional(),
   metadata:    z.record(z.unknown()).optional(),
@@ -30,6 +32,7 @@ export async function listOrders(req: Request, res: Response) {
   try {
     const { page, limit, status } = req.query
     const { role, clientId } = req.user!
+    
 
     // non-admin users can only see their own client's orders
     const filterClientId = ['SUPERADMIN', 'ADMIN'].includes(role)

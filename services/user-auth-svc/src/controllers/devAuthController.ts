@@ -1,5 +1,6 @@
 /**
  * @author Khaesey Angel Tablante
+ * @desc DevBypass Auth
  */
 
 import { Request, Response } from 'express'
