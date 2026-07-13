@@ -26,7 +26,10 @@ export const rateLimiter = rateLimit({
 // strict limit for auth routes — prevents brute force
 export const strictRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 20,                    // only 20 login attempts per window
+  max: 1200,                    // only 20 login attempts per window
+  keyGenerator: (req) => { // to set ip to disable and allow concurrent user here
+    return req.user?.sub || req.ip || 'unknown'
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: {

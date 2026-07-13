@@ -19,6 +19,7 @@ services:
       - api-gateway-2
     networks:
       - finmark-net
+    restart: always
 
   # ─── API Gateway — 2 instances ────────────────────────────────────────────
   api-gateway-1:
@@ -29,6 +30,12 @@ services:
       - PORT=4000
       - NODE_ENV=production
       - INSTANCE_ID=api-gateway-1
+      - USER_AUTH_SVC_URL=http://user-auth-svc:4001
+      - ORDER_SVC_URL=http://order-svc:4002
+      - REPORT_SVC_URL=http://report-svc-1:4003
+      - PRODUCT_SVC_URL=http://product-svc:4004
+      - ADMIN_SVC_URL=http://admin-svc:4005
+      - FEEDBACK_SVC_URL=http://feedback-svc:4006
     env_file: ../../.env
     networks:
       - finmark-net
@@ -45,7 +52,13 @@ services:
     environment:
       - PORT=4000
       - NODE_ENV=production
-      - INSTANCE_ID=api-gateway-2
+      - INSTANCE_ID=api-gateway-1
+      - USER_AUTH_SVC_URL=http://user-auth-svc:4001
+      - ORDER_SVC_URL=http://order-svc:4002
+      - REPORT_SVC_URL=http://report-svc-1:4003
+      - PRODUCT_SVC_URL=http://product-svc:4004
+      - ADMIN_SVC_URL=http://admin-svc:4005
+      - FEEDBACK_SVC_URL=http://feedback-svc:4006
     env_file: ../../.env
     networks:
       - finmark-net

@@ -56,9 +56,6 @@ export function useDashboard(): UseDashboardResult {
     } catch (err: any) {
       console.error('Dashboard fetch failed:', err.message)
       setError(err.message)
-      // fallback to mock so UI doesn't break
-      setData(MOCK_DASHBOARD)
-      setIsMock(true)
     } finally {
       setIsLoading(false)
     }

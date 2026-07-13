@@ -3,9 +3,8 @@
  */
 
 
-import { prisma } from '@finmark/db'
+import { prisma, Prisma} from '@finmark/db'
 import { createLogger } from '@finmark/shared'
-import { Prisma } from '@prisma/client' 
 import type { OrderStatus } from '@finmark/shared'
 import { publishOrderEvent } from '../queue/orderProducer'
 

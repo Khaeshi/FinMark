@@ -47,6 +47,7 @@ export default function () {
   const headers = {
     'Authorization': `Bearer ${AUTH_TOKEN}`,
     'Content-Type':  'application/json',
+    'x-load-test':   'true', 
   }
 
   // ─── Test 1: Dashboard endpoint (primary pain point) ──────────────────────

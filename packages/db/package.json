@@ -2,7 +2,7 @@
   "name": "@finmark/db",
   "version": "1.0.0",
   "description": "Prisma client and database schema for Finmark",
-  "main": "src/client.ts",
+  "main": "dist/client.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -22,10 +22,5 @@
   "devDependencies": {
     "@types/node": "^25.9.2",
     "prisma": "^6.19.3"
-  },
-  "overrides": {
-    "prisma": {
-      "version": "7.8.0"
-    }
   }
 }
