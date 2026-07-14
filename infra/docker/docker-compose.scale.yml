@@ -14,9 +14,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api-gateway-1
-      - api-gateway-2
+      - cdn_cache_dir:/var/cache/nginx
     networks:
       - finmark-net
     restart: always
@@ -31,9 +29,9 @@ services:
       - NODE_ENV=production
       - INSTANCE_ID=api-gateway-1
       - USER_AUTH_SVC_URL=http://user-auth-svc:4001
-      - ORDER_SVC_URL=http://order-svc:4002
-      - REPORT_SVC_URL=http://report-svc-1:4003
-      - PRODUCT_SVC_URL=http://product-svc:4004
+      - ORDER_SVC_URL=http://nginx:4002      
+      - REPORT_SVC_URL=http://nginx:4003     
+      - PRODUCT_SVC_URL=http://nginx:4004    
       - ADMIN_SVC_URL=http://admin-svc:4005
       - FEEDBACK_SVC_URL=http://feedback-svc:4006
     env_file: ../../.env
@@ -52,11 +50,11 @@ services:
     environment:
       - PORT=4000
       - NODE_ENV=production
-      - INSTANCE_ID=api-gateway-1
+      - INSTANCE_ID=api-gateway-2
       - USER_AUTH_SVC_URL=http://user-auth-svc:4001
-      - ORDER_SVC_URL=http://order-svc:4002
-      - REPORT_SVC_URL=http://report-svc-1:4003
-      - PRODUCT_SVC_URL=http://product-svc:4004
+      - ORDER_SVC_URL=http://nginx:4002     
+      - REPORT_SVC_URL=http://nginx:4003     
+      - PRODUCT_SVC_URL=http://nginx:4004   
       - ADMIN_SVC_URL=http://admin-svc:4005
       - FEEDBACK_SVC_URL=http://feedback-svc:4006
     env_file: ../../.env
@@ -68,7 +66,7 @@ services:
       timeout: 5s
       retries: 3
 
-  # ─── Report Service — 3 instances (most critical for dashboard) ───────────
+  # ─── Report Service — 3 instances ─────────────────────────────────────────
   report-svc-1:
     build:
       context: ../..
@@ -97,6 +95,11 @@ services:
     env_file: ../../.env
     networks:
       - finmark-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   report-svc-3:
     build:
@@ -109,6 +112,11 @@ services:
     env_file: ../../.env
     networks:
       - finmark-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ─── Other Services — single instance ─────────────────────────────────────
   user-auth-svc:
@@ -122,13 +130,27 @@ services:
     networks:
       - finmark-net
 
-  order-svc:
+  # ─── Order Service — 2 Passively Balanced Backup Instances ────────────────
+  order-svc-1:
     build:
       context: ../..
       dockerfile: services/order-svc/Dockerfile
     environment:
       - PORT=4002
       - NODE_ENV=production
+      - INSTANCE_ID=order-svc-1
+    env_file: ../../.env
+    networks:
+      - finmark-net
+
+  order-svc-2:
+    build:
+      context: ../..
+      dockerfile: services/order-svc/Dockerfile
+    environment:
+      - PORT=4002
+      - NODE_ENV=production
+      - INSTANCE_ID=order-svc-2
     env_file: ../../.env
     networks:
       - finmark-net
@@ -155,17 +177,44 @@ services:
     networks:
       - finmark-net
 
-  product-svc:
+  # ─── Product Service — 2 Active/Active Instances ──────────────────────────
+  product-svc-1:
     build:
       context: ../..
       dockerfile: services/product-svc/Dockerfile
     environment:
       - PORT=4004
       - NODE_ENV=production
+      - INSTANCE_ID=product-svc-1
     env_file: ../../.env
     networks:
       - finmark-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  product-svc-2:
+    build:
+      context: ../..
+      dockerfile: services/product-svc/Dockerfile
+    environment:
+      - PORT=4004
+      - NODE_ENV=production
+      - INSTANCE_ID=product-svc-2
+    env_file: ../../.env
+    networks:
+      - finmark-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   finmark-net:
     driver: bridge
+
+volumes:
+  cdn_cache_dir:

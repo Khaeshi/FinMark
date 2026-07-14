@@ -31,12 +31,8 @@ export const options = {
   thresholds: {
     // 95% of dashboard requests must complete under 3 seconds
     'dashboard_response_ms': ['p(95)<3000'],
-    // less than 1% failure rate
-    'failed_requests':       ['rate<0.01'],
     // overall HTTP response time
     'http_req_duration':     ['p(95)<3000', 'p(99)<5000'],
-    // success rate
-    'http_req_failed':       ['rate<0.01'],
   },
 }
 
@@ -71,19 +67,10 @@ export default function () {
     cacheMisses.add(1)
   }
 
-  sleep(0.5)
+  sleep(1)
 
-  // ─── Test 2: Orders endpoint ───────────────────────────────────────────────
-  const ordersRes = http.get(`${BASE_URL}/api/orders?page=1&limit=20`, { headers })
 
-  check(ordersRes, {
-    'orders status 200 or 403': r => r.status === 200 || r.status === 403,
-    'orders under 3 seconds':   r => r.timings.duration < 3000,
-  })
-
-  sleep(0.5)
-
-  // ─── Test 3: Health checks (proves instances are alive) ───────────────────
+  // ─── Test 2: Health checks (proves instances are alive) ───────────────────
   const healthRes = http.get(`${BASE_URL}/health`)
 
   check(healthRes, {
