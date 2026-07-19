@@ -9,7 +9,6 @@ ENV DATABASE_URL="postgresql://build:build@localhost:5432/finmark"
 RUN npm run db:generate -w @finmark/db
 RUN npm run build -w @finmark/shared
 RUN npm run build -w @finmark/db
-RUN npm run build -w @finmark/aws
 RUN npm run build -w @finmark/user-auth-svc
 
 ENV NODE_ENV=production
