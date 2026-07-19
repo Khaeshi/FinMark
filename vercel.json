@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npx turbo run build --filter=web",
+  "buildCommand": "npx turbo run build --filter=@finmark/web",
   "outputDirectory": "apps/web/.next",
   "installCommand": "npm install",
   "framework": "nextjs",
