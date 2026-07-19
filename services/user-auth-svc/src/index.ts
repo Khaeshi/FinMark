@@ -3,7 +3,7 @@ import { authRoutes } from './routes/index'
 import { createLogger } from '@finmark/shared'
 
 const app = express()
-const PORT = process.env.USER_AUTH_SVC_PORT || 4001
+const PORT = Number(process.env.PORT || process.env.USER_AUTH_SVC_PORT || 4001)
 const logger = createLogger('user-auth-svc')
 
 app.use(express.json())

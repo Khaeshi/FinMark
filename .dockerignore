@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+.git
+.turbo
+coverage
+playwright-report
+test-results
+*.log
+.env
+.env.*
+tsconfig.tsbuildinfo

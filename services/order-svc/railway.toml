@@ -1,7 +1,9 @@
 [build]
 builder = "dockerfile"
+dockerfilePath = "services/order-svc/Dockerfile"
 
 [deploy]
+startCommand = "node services/order-svc/dist/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

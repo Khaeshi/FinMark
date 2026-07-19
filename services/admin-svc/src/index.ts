@@ -3,7 +3,7 @@ import { adminRoutes } from './routes/index'
 import { createLogger } from '@finmark/shared'
 
 const app = express()
-const PORT = process.env.ADMIN_SVC_PORT || 4005
+const PORT = Number(process.env.PORT || process.env.ADMIN_SVC_PORT || 4005)
 const logger = createLogger('admin-svc')
 
 app.use(express.json())

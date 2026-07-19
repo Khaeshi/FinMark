@@ -1,4 +1,12 @@
 {
-  "buildCommand": "npx turbo run build --filter=@finmark/web",
-  "installCommand": "npm install"
+  "buildCommand": "npm run build -w @finmark/shared && npm run build -w @finmark/web",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://finmark-api.up.railway.app/api/:path*"
+    }
+  ]
 }

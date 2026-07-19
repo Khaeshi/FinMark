@@ -8,7 +8,7 @@ import { proxyRoutes } from './routes/proxy'
 import { healthRouter } from './routes/health'
 
 const app = express()
-const PORT = process.env.PORT || 4000
+const PORT = Number(process.env.PORT || 4000)
 
 /**
  * Security Headers

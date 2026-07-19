@@ -4,7 +4,7 @@ import { createLogger } from '@finmark/shared'
 import { userContext } from './middleware/userContext' 
 
 const app = express()
-const PORT = process.env.ORDER_SVC_PORT || 4002
+const PORT = Number(process.env.PORT || process.env.ORDER_SVC_PORT || 4002)
 const logger = createLogger('order-svc')
 
 app.use(express.json())
