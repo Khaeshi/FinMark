@@ -144,12 +144,13 @@ export async function updateClientHandler(req: Request, res: Response) {
 
 export async function listAuditLogs(req: Request, res: Response) {
   try {
-    const { userId, action, page, limit } = req.query
+    const { userId, action, resourceId, page, limit } = req.query
     const result = await getAuditLogs({
-      userId:  userId as string,
-      action:  action as string,
-      page:    Number(page) || 1,
-      limit:   Number(limit) || 50,
+      userId:     userId as string,
+      action:     action as string,
+      resourceId: resourceId as string,
+      page:       Number(page) || 1,
+      limit:      Number(limit) || 50,
     })
     res.json({ success: true, ...result })
   } catch (err) {

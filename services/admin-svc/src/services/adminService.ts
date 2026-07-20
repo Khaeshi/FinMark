@@ -198,16 +198,18 @@ export async function updateClient(clientId: string, data: {
  */
 
 export async function getAuditLogs(filters: {
-  userId?:   string
-  action?:   string
-  page?:     number
-  limit?:    number
+  userId?:     string
+  action?:     string
+  resourceId?: string
+  page?:       number
+  limit?:      number
 }) {
-  const { userId, action, page = 1, limit = 50 } = filters
+  const { userId, action, resourceId, page = 1, limit = 50 } = filters
 
   const where = {
-    ...(userId && { userId }),
-    ...(action && { action: { contains: action } }),
+    ...(userId     && { userId }),
+    ...(action     && { action: { contains: action } }),
+    ...(resourceId && { resourceId }),
   }
 
   const [logs, total] = await Promise.all([

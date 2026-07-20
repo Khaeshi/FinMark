@@ -4,8 +4,10 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { useOrderAuditLog } from '@/hooks/useOrderAuditLog'
 import { formatPHP } from '@/lib/format'
 import { parseApiResponseError } from '@/lib/api-errors'
+import { OrderAuditTimeline } from '@/components/orders/OrderAuditTimeline'
 import type { OrderStatus } from '@finmark/shared'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
@@ -29,6 +31,8 @@ interface OrderDetail {
   metadata?: Record<string, unknown> | null
   createdAt: string
   updatedAt: string
+  flagged?: boolean
+  flagReason?: string | null
   client?: { name: string; industry: string; country: string }
 }
 
@@ -38,9 +42,11 @@ export default function OrderDetailPage() {
   const { tokens } = useAuth()
   const orderId = params.id as string
 
-  const [order, setOrder]     = useState<OrderDetail | null>(null)
+  const [order, setOrder]       = useState<OrderDetail | null>(null)
   const [isLoading, setLoading] = useState(true)
-  const [error, setError]     = useState<string | null>(null)
+  const [error, setError]       = useState<string | null>(null)
+
+  const audit = useOrderAuditLog(orderId)
 
   useEffect(() => {
     if (!tokens?.accessToken || !orderId) return
@@ -108,10 +114,26 @@ export default function OrderDetailPage() {
             ORD-{order.id.slice(-4).toUpperCase()}
           </h1>
         </div>
-        <span className={`text-xs font-bold tracking-wide uppercase px-3 py-1.5 rounded-full border ${STATUS_COLORS[order.status]}`}>
-          {order.status}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`text-xs font-bold tracking-wide uppercase px-3 py-1.5 rounded-full border ${STATUS_COLORS[order.status]}`}>
+            {order.status}
+          </span>
+          {order.flagged && (
+            <span
+              title={order.flagReason || undefined}
+              className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20"
+            >
+              ⚠ Unusual amount
+            </span>
+          )}
+        </div>
       </div>
+
+      {order.flagged && order.flagReason && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3">
+          <p className="text-amber-300 text-sm">{order.flagReason}</p>
+        </div>
+      )}
 
       <div
         className="rounded-2xl border border-white/[0.06] p-5 space-y-4"
@@ -124,6 +146,12 @@ export default function OrderDetailPage() {
           </div>
         ))}
       </div>
+
+      <OrderAuditTimeline
+        entries={audit.entries}
+        isLoading={audit.isLoading}
+        error={audit.error}
+      />
 
       {order.metadata && Object.keys(order.metadata).length > 0 && (
         <div

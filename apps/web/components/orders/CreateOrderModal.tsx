@@ -53,6 +53,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
   const [description, setDescription]   = useState('')
   const [errors, setErrors]             = useState<FieldErrors>({})
   const [touched, setTouched]           = useState<Record<string, boolean>>({})
+  const [flagNotice, setFlagNotice]     = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,6 +63,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
       setDescription('')
       setErrors({})
       setTouched({})
+      setFlagNotice(null)
       reset()
       return
     }
@@ -83,18 +85,30 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
       return
     }
 
-    const ok = await createOrder({
+    const result = await createOrder({
       clientId: resolvedClientId,
       amount: amount.trim(),
       currency,
       description: description.trim() || undefined,
     })
 
-    if (ok) {
-      sileo.success({ title: 'Order created' })
+    if (!result.ok) return
+
+    if (result.flagged) {
+      setFlagNotice(
+        result.flagReason
+          || 'This order is significantly larger than usual for this client — flagged for review.'
+      )
+      sileo.success({ title: 'Order created', description: 'Flagged for review' })
       onSuccess?.()
-      onClose()
+      // Keep modal open briefly so the demo notice is visible
+      setTimeout(() => onClose(), 2200)
+      return
     }
+
+    sileo.success({ title: 'Order created' })
+    onSuccess?.()
+    onClose()
   }
 
   return (
@@ -106,6 +120,13 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
           </div>
         )}
 
+        {flagNotice && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
+            <p className="text-amber-300 text-sm font-medium">⚠ Unusual amount</p>
+            <p className="text-amber-400/80 text-xs mt-1">{flagNotice}</p>
+          </div>
+        )}
+
         <FormField>
           <FormLabel required>Client</FormLabel>
           {canPickClient ? (
@@ -114,6 +135,7 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
               onChange={e => setClientId(e.target.value)}
               onBlur={() => handleBlur('clientId')}
               hasError={touched.clientId && !!errors.clientId}
+              disabled={!!flagNotice}
             >
               <option value="">Select SME client…</option>
               {clients.filter(c => c.isActive).map(c => (
@@ -141,12 +163,13 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
               onChange={e => setAmount(e.target.value)}
               onBlur={() => handleBlur('amount')}
               hasError={touched.amount && !!errors.amount}
+              disabled={!!flagNotice}
             />
             <FormError message={touched.amount ? errors.amount : undefined} />
           </FormField>
           <FormField>
             <FormLabel>Currency</FormLabel>
-            <FormSelect value={currency} onChange={e => setCurrency(e.target.value)}>
+            <FormSelect value={currency} onChange={e => setCurrency(e.target.value)} disabled={!!flagNotice}>
               <option value="PHP">PHP</option>
               <option value="USD">USD</option>
               <option value="SGD">SGD</option>
@@ -164,14 +187,17 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
             onChange={e => setDescription(e.target.value)}
             onBlur={() => handleBlur('description')}
             hasError={touched.description && !!errors.description}
+            disabled={!!flagNotice}
           />
           <FormError message={touched.description ? errors.description : undefined} />
         </FormField>
 
-        <FormActions>
-          <FormCancelButton onClick={onClose} />
-          <FormSubmitButton isLoading={isLoading}>Create Order</FormSubmitButton>
-        </FormActions>
+        {!flagNotice && (
+          <FormActions>
+            <FormCancelButton onClick={onClose} />
+            <FormSubmitButton isLoading={isLoading}>Create Order</FormSubmitButton>
+          </FormActions>
+        )}
       </form>
     </Modal>
   )

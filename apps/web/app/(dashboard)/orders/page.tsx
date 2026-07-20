@@ -36,6 +36,8 @@ type OrderRow = {
   description?: string | null
   createdAt: Date | string
   client?: { name: string; industry: string }
+  flagged?: boolean
+  flagReason?: string | null
 }
 
 function formatOrderDate(date: Date | string) {
@@ -171,7 +173,19 @@ export default function OrdersPage() {
                           {order.client?.name || `${order.clientId.slice(0, 8)}…`}
                         </td>
                         <td className="px-5 py-4 text-sm text-slate-400 max-w-[220px] truncate">{order.description || '—'}</td>
-                        <td className="px-5 py-4 text-sm font-semibold text-white">{formatPHP(order.amount)}</td>
+                        <td className="px-5 py-4 text-sm font-semibold text-white">
+                          <div className="flex flex-col gap-1">
+                            <span>{formatPHP(order.amount)}</span>
+                            {order.flagged && (
+                              <span
+                                title={order.flagReason || 'Unusual amount'}
+                                className="inline-flex w-fit text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20"
+                              >
+                                ⚠ Unusual amount
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
                           {canCreate && nextStatuses.filter(s => s !== 'CANCELLED').length > 0 ? (
                             <select

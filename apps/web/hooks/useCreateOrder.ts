@@ -13,8 +13,14 @@ export interface CreateOrderInput {
   metadata?:    Record<string, unknown>
 }
 
+export interface CreateOrderResult {
+  ok:         boolean
+  flagged?:   boolean
+  flagReason?: string | null
+}
+
 interface UseCreateOrderResult {
-  createOrder: (input: CreateOrderInput) => Promise<boolean>
+  createOrder: (input: CreateOrderInput) => Promise<CreateOrderResult>
   isLoading:   boolean
   error:       string | null
   success:     boolean
@@ -32,10 +38,10 @@ export function useCreateOrder(): UseCreateOrderResult {
     setSuccess(false)
   }, [])
 
-  const createOrder = useCallback(async (input: CreateOrderInput) => {
+  const createOrder = useCallback(async (input: CreateOrderInput): Promise<CreateOrderResult> => {
     if (!tokens?.accessToken) {
       setError('Not authenticated')
-      return false
+      return { ok: false }
     }
     setIsLoading(true)
     setError(null)
@@ -50,11 +56,16 @@ export function useCreateOrder(): UseCreateOrderResult {
         body: JSON.stringify(input),
       })
       if (!res.ok) throw new Error(await parseApiResponseError(res))
+      const json = await res.json()
       setSuccess(true)
-      return true
+      return {
+        ok: true,
+        flagged: Boolean(json.data?.flagged),
+        flagReason: json.data?.flagReason ?? null,
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to create order')
-      return false
+      return { ok: false }
     } finally {
       setIsLoading(false)
     }
