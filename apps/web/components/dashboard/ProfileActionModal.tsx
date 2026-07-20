@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Loader2 } from 'lucide-react'
 import { sileo } from 'sileo'
 import { useAuth } from '@/lib/auth-context'
@@ -33,6 +34,12 @@ interface Props {
 }
 
 export function ProfileActionModal({ panel, onClose }: Props) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -41,7 +48,14 @@ export function ProfileActionModal({ panel, onClose }: Props) {
     return () => document.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  return (
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#141820] shadow-2xl overflow-hidden">
@@ -64,7 +78,8 @@ export function ProfileActionModal({ panel, onClose }: Props) {
           {panel === 'help'          && <HelpPanel />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

@@ -110,7 +110,7 @@ router.use(
   '/dashboard',
   requireRole('SUPERADMIN', 'ADMIN', 'FINANCE', 'OPERATIONS', 'ANALYST', 'VIEWER'),
   // dashboard routes are defined in report-svc under '/dashboard/...'
-  makeProxy(SERVICES.reports, { '^/dashboard': '/dashboard' })
+  makeProxy(SERVICES.reports, { '^/': '/dashboard' })
 )
 
 export { router as proxyRoutes }
