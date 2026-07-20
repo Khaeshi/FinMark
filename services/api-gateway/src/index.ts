@@ -165,11 +165,12 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   res.status(500).json({ success: false, error: 'Internal server error' })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(JSON.stringify({
     level: 'info',
     service: 'api-gateway',
-    message: `API Gateway running on port ${PORT}`,
+    message: `API Gateway running on 0.0.0.0:${PORT}`,
+    nodeEnv: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   }))
 })
