@@ -2,66 +2,56 @@
 
 export function DashboardSkeleton() {
   return (
-    <div className="p-6 lg:p-8 space-y-8 animate-pulse">
-      {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="h-8 w-64 rounded bg-slate-800" />
-        <div className="h-4 w-40 rounded bg-slate-800" />
+    <div className="p-6 lg:p-8 space-y-6 animate-pulse">
+      <div className="flex flex-col gap-3">
+        <div className="h-8 w-72 rounded-lg bg-white/[0.04]" />
+        <div className="h-4 w-48 rounded bg-white/[0.04]" />
       </div>
 
-      {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div
             key={i}
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-5"
+            className="rounded-2xl border border-white/[0.06] p-5"
+            style={{ background: 'rgba(255,255,255,0.025)' }}
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="h-4 w-24 rounded bg-slate-800" />
-              <div className="h-10 w-10 rounded-full bg-slate-800" />
+              <div className="h-9 w-9 rounded-xl bg-white/[0.04]" />
+              <div className="h-5 w-14 rounded-full bg-white/[0.04]" />
             </div>
-
-            <div className="h-8 w-32 rounded bg-slate-800 mb-3" />
-            <div className="h-4 w-20 rounded bg-slate-800" />
+            <div className="h-7 w-28 rounded bg-white/[0.04] mb-2" />
+            <div className="h-3 w-20 rounded bg-white/[0.04]" />
           </div>
         ))}
       </div>
 
-      {/* Charts + Table */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Revenue Chart */}
-        <div className="xl:col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <div className="h-6 w-40 rounded bg-slate-800 mb-6" />
-
-          <div className="flex items-end justify-between h-[320px] gap-3">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        <div className="xl:col-span-2 rounded-2xl border border-white/[0.06] p-6" style={{ background: 'rgba(255,255,255,0.025)' }}>
+          <div className="h-5 w-40 rounded bg-white/[0.04] mb-6" />
+          <div className="flex items-end justify-between h-[260px] gap-2">
             {[...Array(12)].map((_, i) => (
               <div
                 key={i}
-                className="flex-1 rounded-t bg-slate-800"
-                style={{
-                  height: `${30 + ((i * 17) % 70)}%`,
-                }}
+                className="flex-1 rounded-t bg-white/[0.04]"
+                style={{ height: `${30 + ((i * 17) % 70)}%` }}
               />
             ))}
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <div className="h-6 w-32 rounded bg-slate-800 mb-6" />
-
+        <div className="rounded-2xl border border-white/[0.06] p-6" style={{ background: 'rgba(255,255,255,0.025)' }}>
+          <div className="h-5 w-32 rounded bg-white/[0.04] mb-6" />
           <div className="space-y-4">
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between border-b border-slate-800 pb-3"
-              >
-                <div className="space-y-2">
-                  <div className="h-4 w-28 rounded bg-slate-800" />
-                  <div className="h-3 w-20 rounded bg-slate-800" />
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-white/[0.04]" />
+                  <div className="space-y-2">
+                    <div className="h-3.5 w-28 rounded bg-white/[0.04]" />
+                    <div className="h-3 w-16 rounded bg-white/[0.04]" />
+                  </div>
                 </div>
-
-                <div className="h-6 w-16 rounded-full bg-slate-800" />
+                <div className="h-4 w-16 rounded bg-white/[0.04]" />
               </div>
             ))}
           </div>
