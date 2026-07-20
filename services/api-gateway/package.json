@@ -23,6 +23,7 @@
     "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.3",
     "jwks-rsa": "^4.0.1",
+    "prom-client": "^15.1.0",
     "uuid": "^14.0.0",
     "zod": "^4.4.3"
   },

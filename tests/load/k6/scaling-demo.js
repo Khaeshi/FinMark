@@ -1,13 +1,19 @@
 /**
  * FinMark — Scaling Demonstration Test
- * 
+ *
  * This test proves the platform actively handles:
  * 1. Gradual traffic ramp up to 200 concurrent users
  * 2. Dashboard responses stay under 3 seconds
- * 3. System stays stable under peak load
- * 4. Graceful scale down after spike
- * 
- * Run: k6 run -e BASE_URL=https://your-railway-url -e AUTH_TOKEN=your-token tests/load/k6/scaling-demo.js
+ * 3. Load across multiple microservices (not only report-svc)
+ * 4. System stays stable under peak load
+ * 5. Graceful scale down after spike
+ *
+ * Local scale demo (Docker Compose):
+ *   k6 run -e BASE_URL=http://localhost -e AUTH_TOKEN=$token tests/load/k6/scaling-demo.js
+ *
+ * Do NOT use localhost:4000 for the scale stack — that port is usually a local
+ * single-instance gateway. Grafana/Prometheus only see the Docker services
+ * behind nginx on port 80.
  */
 
 import http from 'k6/http'
@@ -15,38 +21,36 @@ import { check, sleep } from 'k6'
 import { Rate, Trend, Counter } from 'k6/metrics'
 
 // custom metrics
-const failRate        = new Rate('failed_requests')
-const dashboardTrend  = new Trend('dashboard_response_ms')
-const cacheHits       = new Counter('cache_hits')
-const cacheMisses     = new Counter('cache_misses')
+const failRate       = new Rate('failed_requests')
+const dashboardTrend = new Trend('dashboard_response_ms')
+const cacheHits      = new Counter('cache_hits')
+const cacheMisses    = new Counter('cache_misses')
 
 export const options = {
   stages: [
     { duration: '30s', target: 10  },  // warm up
     { duration: '30s', target: 50  },  // ramp to 50 users
-    { duration: '1m',  target: 200 },  // peak: 200 concurrent users (FinMark's 200 employees)
+    { duration: '1m',  target: 200 },  // peak: 200 concurrent users
     { duration: '30s', target: 200 },  // sustain peak
     { duration: '30s', target: 0   },  // scale down
   ],
   thresholds: {
-    // 95% of dashboard requests must complete under 3 seconds
     'dashboard_response_ms': ['p(95)<3000'],
-    // overall HTTP response time
     'http_req_duration':     ['p(95)<3000', 'p(99)<5000'],
   },
 }
 
-const BASE_URL   = __ENV.BASE_URL   || 'http://localhost:4000'
+const BASE_URL   = __ENV.BASE_URL   || 'http://localhost'
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || ''
 
 export default function () {
   const headers = {
     'Authorization': `Bearer ${AUTH_TOKEN}`,
     'Content-Type':  'application/json',
-    'x-load-test':   'true', 
+    'x-load-test':   'true',
   }
 
-  // ─── Test 1: Dashboard endpoint (primary pain point) ──────────────────────
+  // ─── 1. Dashboard (report-svc — primary scaling proof) ────────────────────
   const dashboardRes = http.get(`${BASE_URL}/api/dashboard`, { headers })
 
   const dashboardOk = check(dashboardRes, {
@@ -60,27 +64,43 @@ export default function () {
   dashboardTrend.add(dashboardRes.timings.duration)
   failRate.add(!dashboardOk)
 
-  // track cache hits (sub-100ms = Redis cache hit)
   if (dashboardRes.timings.duration < 100) {
     cacheHits.add(1)
   } else {
     cacheMisses.add(1)
   }
 
-  sleep(1)
+  sleep(0.5)
+
+  // ─── 2. Fan-out to other services (shows up in Grafana) ───────────────────
+  // SUPERADMIN token can hit all of these. Fired in parallel so peak concurrency
+  // stresses gateway + backends together.
+  const batch = http.batch([
+    ['GET', `${BASE_URL}/api/orders`,        null, { headers, tags: { name: 'orders' } }],
+    ['GET', `${BASE_URL}/api/products`,      null, { headers, tags: { name: 'products' } }],
+    ['GET', `${BASE_URL}/api/admin/users`,   null, { headers, tags: { name: 'admin' } }],
+    ['GET', `${BASE_URL}/api/feedback`,      null, { headers, tags: { name: 'feedback' } }],
+    ['GET', `${BASE_URL}/api/auth/profile`,  null, { headers, tags: { name: 'auth-profile' } }],
+  ])
+
+  check(batch[0], { 'orders status 200':   r => r.status === 200 })
+  check(batch[1], { 'products status 200': r => r.status === 200 })
+  check(batch[2], { 'admin status 200':    r => r.status === 200 })
+  check(batch[3], { 'feedback status 200': r => r.status === 200 })
+  check(batch[4], { 'profile status 200':  r => r.status === 200 })
 
 
-  // ─── Test 2: Health checks (proves instances are alive) ───────────────────
+  sleep(0.5)
+
+  // ─── 3. Gateway health ────────────────────────────────────────────────────
   const healthRes = http.get(`${BASE_URL}/health`)
-
   check(healthRes, {
     'gateway healthy': r => r.status === 200,
   })
 
-  sleep(1)
+  sleep(0.5)
 }
 
-// runs once at end — summary report
 export function handleSummary(data) {
   const dashboard = data.metrics['dashboard_response_ms']
   const failures  = data.metrics['failed_requests']
@@ -101,6 +121,7 @@ export function handleSummary(data) {
       'Failure Rate':                `${((failures?.values?.rate || 0) * 100).toFixed(2)}%`,
       'Redis Cache Hit Rate':        `${cacheHitRate}%`,
       'Target Met (under 3s p95)':   (dashboard?.values?.['p(95)'] || 9999) < 3000 ? '✅ YES' : '❌ NO',
+      'Services Hit':                'gateway, report, order, product, admin, feedback, user-auth',
       'Original Load Time':          '20 seconds (before optimization)',
     }
   }

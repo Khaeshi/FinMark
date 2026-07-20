@@ -12,7 +12,7 @@ import rateLimit from 'express-rate-limit'
 // general API rate limit — 200 employees, generous limit
 export const rateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 12000,                   // 500 requests per window per IP
+  max: 999999,                   // original 500 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {

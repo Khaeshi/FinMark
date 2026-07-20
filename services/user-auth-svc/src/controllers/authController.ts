@@ -219,7 +219,10 @@ export async function refresh(req: Request, res: Response) {
  */
 export async function getProfile(req: Request, res: Response) {
   try {
-    const profile = await getUserProfile(req.user!.sub)
+    if (!req.user?.sub) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' })
+    }
+    const profile = await getUserProfile(req.user.sub)
     if (!profile) {
       return res.status(404).json({ success: false, error: 'User not found' })
     }

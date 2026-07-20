@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway-1:4000', 'api-gateway-2:4000']
+    metrics_path: '/metrics'
+
+  - job_name: 'report-svc'
+    static_configs:
+      - targets: ['report-svc-1:4003', 'report-svc-2:4003', 'report-svc-3:4003']
+    metrics_path: '/metrics'
+
+  - job_name: 'order-svc'
+    static_configs:
+      - targets: ['order-svc-1:4002', 'order-svc-2:4002']
+    metrics_path: '/metrics'
+
+  - job_name: 'admin-svc'
+    static_configs:
+      - targets: ['admin-svc:4005']
+    metrics_path: '/metrics'
+
+  - job_name: 'user-auth-svc'
+    static_configs:
+      - targets: ['user-auth-svc:4001']
+    metrics_path: '/metrics'
+
+  - job_name: 'feedback-svc'
+    static_configs:
+      - targets: ['feedback-svc:4006']
+    metrics_path: '/metrics'
+
+  - job_name: 'product-svc'
+    static_configs:
+      - targets: ['product-svc-1:4004', 'product-svc-2:4004']
+    metrics_path: '/metrics'
