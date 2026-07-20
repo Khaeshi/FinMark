@@ -2,6 +2,7 @@
  * @author Khaesey Angel Tablante
  */
 
+import crypto from 'crypto'
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
@@ -25,6 +26,26 @@ const CLIENT_ID     = process.env.COGNITO_CLIENT_ID!
 const CLIENT_SECRET = process.env.COGNITO_CLIENT_SECRET
 
 /**
+ * Cognito requires SECRET_HASH when the app client has a client secret.
+ * HMAC-SHA256(username + clientId, clientSecret) → base64
+ */
+function secretHash(username: string): string | undefined {
+  if (!CLIENT_SECRET) return undefined
+  return crypto
+    .createHmac('sha256', CLIENT_SECRET)
+    .update(username + CLIENT_ID)
+    .digest('base64')
+}
+
+function withSecretHash(
+  username: string,
+  params: Record<string, string> = {}
+): Record<string, string> {
+  const hash = secretHash(username)
+  return hash ? { ...params, SECRET_HASH: hash } : params
+}
+
+/**
  *  Login
  * @param email 
  * @param password 
@@ -34,10 +55,10 @@ export async function signIn(email: string, password: string) {
   const command = new InitiateAuthCommand({
     AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
     ClientId: CLIENT_ID,
-    AuthParameters: {
+    AuthParameters: withSecretHash(email, {
       USERNAME: email,
       PASSWORD: password,
-    },
+    }),
   })
 
   const response = await cognitoClient.send(command)
@@ -76,6 +97,7 @@ export async function signUp(email: string, password: string, name: string) {
     ClientId: CLIENT_ID,
     Username: email,
     Password: password,
+    SecretHash: secretHash(email),
     UserAttributes: [
       { Name: 'email', Value: email },
       { Name: 'name',  Value: name },
@@ -100,6 +122,7 @@ export async function confirmSignUp(email: string, code: string) {
     ClientId:         CLIENT_ID,
     Username:         email,
     ConfirmationCode: code,
+    SecretHash:       secretHash(email),
   })
 
   await cognitoClient.send(command)
@@ -111,13 +134,19 @@ export async function confirmSignUp(email: string, code: string) {
  * @param refreshToken 
  * @returns accessToken, idToken, expiresIn.
  */
-export async function refreshSession(refreshToken: string) {
+export async function refreshSession(refreshToken: string, username?: string) {
+  // With a client secret, Cognito needs USERNAME + SECRET_HASH on refresh
+  const params: Record<string, string> = {
+    REFRESH_TOKEN: refreshToken,
+  }
+  if (username) {
+    params.USERNAME = username
+  }
+
   const command = new InitiateAuthCommand({
     AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
     ClientId: CLIENT_ID,
-    AuthParameters: {
-      REFRESH_TOKEN: refreshToken,
-    },
+    AuthParameters: username ? withSecretHash(username, params) : params,
   })
 
   const response = await cognitoClient.send(command)
@@ -155,8 +184,9 @@ export async function getUserFromToken(accessToken: string) {
  */
 export async function forgotPassword(email: string) {
   const command = new ForgotPasswordCommand({
-    ClientId: CLIENT_ID,
-    Username: email,
+    ClientId:   CLIENT_ID,
+    Username:   email,
+    SecretHash: secretHash(email),
   })
 
   await cognitoClient.send(command)
@@ -180,6 +210,7 @@ export async function confirmForgotPassword(
     Username:         email,
     ConfirmationCode: code,
     Password:         newPassword,
+    SecretHash:       secretHash(email),
   })
 
   await cognitoClient.send(command)

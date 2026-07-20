@@ -48,6 +48,8 @@ const ConfirmSchema = z.object({
 
 const RefreshSchema = z.object({
   refreshToken: z.string(),
+  // required when Cognito app client has a secret (SECRET_HASH uses username)
+  email: z.string().email().optional(),
 })
 
 /**
@@ -203,7 +205,7 @@ export async function refresh(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Refresh token required' })
     }
 
-    const result = await refreshSession(body.data.refreshToken)
+    const result = await refreshSession(body.data.refreshToken, body.data.email)
     return res.json({ success: true, data: result })
   } catch (err) {
     logger.error('Token refresh failed', err, req.requestId)

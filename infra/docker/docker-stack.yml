@@ -46,6 +46,8 @@ services:
       - PRODUCT_SVC_URL=http://product-svc:4004
       - ADMIN_SVC_URL=http://admin-svc:4005
       - FEEDBACK_SVC_URL=http://feedback-svc:4006
+    env_file:
+      - ../../.env
     deploy:
       replicas: 2
       restart_policy:
@@ -77,6 +79,8 @@ services:
     environment:
       - PORT=4003
       - NODE_ENV=production
+    env_file:
+      - ../../.env
     deploy:
       replicas: 3
       restart_policy:
@@ -108,6 +112,8 @@ services:
     environment:
       - PORT=4001
       - NODE_ENV=development
+    env_file:
+      - ../../.env
     deploy:
       replicas: 1
       restart_policy:
@@ -132,6 +138,8 @@ services:
     environment:
       - PORT=4002
       - NODE_ENV=production
+    env_file:
+      - ../../.env
     deploy:
       replicas: 2
       restart_policy:
@@ -156,6 +164,8 @@ services:
     environment:
       - PORT=4005
       - NODE_ENV=production
+    env_file:
+      - ../../.env
     deploy:
       replicas: 1
       restart_policy:
@@ -180,6 +190,8 @@ services:
     environment:
       - PORT=4004
       - NODE_ENV=production
+    env_file:
+      - ../../.env
     deploy:
       replicas: 2
       restart_policy:
@@ -204,6 +216,8 @@ services:
     environment:
       - PORT=4006
       - NODE_ENV=production
+    env_file:
+      - ../../.env
     deploy:
       replicas: 1
       restart_policy:
