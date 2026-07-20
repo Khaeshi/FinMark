@@ -4,9 +4,9 @@
 
 
 import { prisma } from '@finmark/db'
-import { createLogger } from '@finmark/shared'
+import { createLogger, subtractAmounts } from '@finmark/shared'
 import type { DashboardData, UserRole } from '@finmark/shared'
-import { getCache, setCache, CACHE_KEYS, TTL } from '../cache/redisClient'
+import { getCache, setCache, invalidateCache, CACHE_KEYS, TTL } from '../cache/redisClient'
 
 const logger = createLogger('report-svc')
 
@@ -204,4 +204,100 @@ export async function getAllFinancialRecords(clientId?: string) {
     expenses:  f.expenses.toString(),
     netProfit: f.netProfit.toString(),
   }))
+}
+
+/**
+ * Create a quarterly financial record for an SME client.
+ * Amounts are stored as Decimal strings — never floats.
+ */
+export async function createFinancialRecord(data: {
+  clientId:   string
+  period:     string
+  revenue:    string
+  expenses:   string
+  netProfit:  string
+  orderCount: number
+}) {
+  const client = await prisma.sMEClient.findUnique({ where: { id: data.clientId } })
+  if (!client) return { error: 'Client not found' }
+
+  const existing = await prisma.financial.findUnique({
+    where: { clientId_period: { clientId: data.clientId, period: data.period } },
+  })
+  if (existing) return { error: `Financial record for ${data.period} already exists` }
+
+  const record = await prisma.financial.create({
+    data: {
+      clientId:   data.clientId,
+      period:     data.period,
+      revenue:    data.revenue,
+      expenses:   data.expenses,
+      netProfit:  data.netProfit,
+      orderCount: data.orderCount,
+    },
+    include: {
+      client: { select: { name: true, industry: true } },
+    },
+  })
+
+  await invalidateCache(`financial:${data.clientId}:*`)
+  await invalidateCache('dashboard:*')
+
+  logger.info('Financial record created', { id: record.id, clientId: data.clientId, period: data.period })
+
+  return {
+    ...record,
+    revenue:   record.revenue.toString(),
+    expenses:  record.expenses.toString(),
+    netProfit: record.netProfit.toString(),
+  }
+}
+
+/**
+ * Update an existing financial record by id.
+ */
+export async function updateFinancialRecord(
+  id: string,
+  data: {
+    revenue?:    string
+    expenses?:   string
+    netProfit?:  string
+    orderCount?: number
+  }
+) {
+  const existing = await prisma.financial.findUnique({ where: { id } })
+  if (!existing) return { error: 'Financial record not found' }
+
+  const nextRevenue  = data.revenue  ?? existing.revenue.toString()
+  const nextExpenses = data.expenses ?? existing.expenses.toString()
+  const nextProfit  = data.netProfit ?? (
+    data.revenue !== undefined || data.expenses !== undefined
+      ? subtractAmounts(nextRevenue, nextExpenses)
+      : undefined
+  )
+
+  const record = await prisma.financial.update({
+    where: { id },
+    data: {
+      ...(data.revenue    !== undefined && { revenue: data.revenue }),
+      ...(data.expenses   !== undefined && { expenses: data.expenses }),
+      ...(nextProfit      !== undefined && { netProfit: nextProfit }),
+      ...(data.orderCount !== undefined && { orderCount: data.orderCount }),
+    },
+    include: {
+      client: { select: { name: true, industry: true } },
+    },
+  })
+
+  await invalidateCache(`financial:${record.clientId}:*`)
+  await invalidateCache('dashboard:*')
+
+  logger.info('Financial record updated', { id: record.id })
+
+  return {
+    ...record,
+    revenue:   record.revenue.toString(),
+    expenses:  record.expenses.toString(),
+    netProfit: record.netProfit.toString(),
+  }
 }

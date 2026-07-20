@@ -1,8 +1,16 @@
 'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { sileo } from 'sileo'
+import { Plus } from 'lucide-react'
 import { useOrders } from '@/hooks/useOrders'
+import { useUpdateOrderStatus } from '@/hooks/useUpdateOrderStatus'
+import { useAuth } from '@/lib/auth-context'
 import { formatPHP } from '@/lib/format'
+import { canCreateOrders, ORDER_STATUS_TRANSITIONS } from '@/lib/role-checks'
 import { OrdersSkeleton } from '@/components/dashboard/OrdersSkeleton'
 import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { CreateOrderModal } from '@/components/orders/CreateOrderModal'
 import { isPermissionDenied } from '@/lib/api-errors'
 import type { OrderStatus } from '@finmark/shared'
 
@@ -15,14 +23,35 @@ const STATUS_COLORS: Record<string, string> = {
   REFUNDED:   'text-slate-400',
 }
 
-const ALL_STATUSES: (OrderStatus | 'ALL')[] = ['ALL', 'PENDING', 'CONFIRMED', 'PROCESSING', 'FULFILLED', 'CANCELLED', 'REFUNDED']
+const ALL_STATUSES: (OrderStatus | 'ALL')[] = [
+  'ALL', 'PENDING', 'CONFIRMED', 'PROCESSING', 'FULFILLED', 'CANCELLED', 'REFUNDED',
+]
+
+type OrderRow = {
+  id: string
+  clientId: string
+  status: OrderStatus
+  amount: string
+  currency: string
+  description?: string | null
+  createdAt: Date | string
+  client?: { name: string; industry: string }
+}
 
 function formatOrderDate(date: Date | string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export default function OrdersPage() {
-  const { orders, total, isLoading, error, page, hasMore, setPage, setStatus, status } = useOrders()
+  const router = useRouter()
+  const { user } = useAuth()
+  const { orders, total, isLoading, error, page, hasMore, setPage, setStatus, status, refetch } = useOrders()
+  const { updateStatus, cancelOrder, isLoading: mutating, updatingId, error: mutateError } = useUpdateOrderStatus()
+  const [showCreate, setShowCreate] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+
+  const canCreate = canCreateOrders(user?.role)
 
   if (isLoading && orders.length === 0 && !isPermissionDenied(error)) return <OrdersSkeleton />
 
@@ -38,7 +67,27 @@ export default function OrdersPage() {
     )
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / 10))
+  const totalPages = Math.max(1, Math.ceil(total / 20))
+  const typedOrders = orders as OrderRow[]
+
+  async function handleStatusChange(orderId: string, next: OrderStatus) {
+    const ok = await updateStatus(orderId, next)
+    if (ok) {
+      sileo.success({ title: `Status → ${next}` })
+      refetch()
+    }
+  }
+
+  async function handleCancelConfirm() {
+    if (!cancelTarget) return
+    const ok = await cancelOrder(cancelTarget, cancelReason.trim() || undefined)
+    if (ok) {
+      sileo.success({ title: 'Order cancelled' })
+      setCancelTarget(null)
+      setCancelReason('')
+      refetch()
+    }
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -47,11 +96,22 @@ export default function OrdersPage() {
           <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Orders</h1>
           <p className="text-slate-500 text-sm mt-1">{total} total orders</p>
         </div>
-        {error && !isPermissionDenied(error) && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
-            <p className="text-red-400 text-sm">⚠ {error}</p>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {(error || mutateError) && !isPermissionDenied(error) && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
+              <p className="text-red-400 text-sm">⚠ {error || mutateError}</p>
+            </div>
+          )}
+          {canCreate && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-2 text-xs px-4 py-2 rounded-full bg-emerald-500 text-[#0d1117] font-semibold hover:bg-emerald-400 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New Order
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -78,7 +138,7 @@ export default function OrdersPage() {
           <div className="p-16 flex items-center justify-center">
             <span className="w-6 h-6 border-2 border-white/10 border-t-emerald-400 rounded-full animate-spin" />
           </div>
-        ) : orders.length === 0 ? (
+        ) : typedOrders.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center gap-2">
             <PackageIcon />
             <p className="text-slate-400 text-sm">No orders found</p>
@@ -89,31 +149,63 @@ export default function OrdersPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-white/[0.06]">
-                    {['Order ID', 'Client', 'Description', 'Amount', 'Status', 'Date'].map(h => (
+                    {['Order ID', 'Client', 'Description', 'Amount', 'Status', 'Date', 'Actions'].map(h => (
                       <th key={h} className="text-left px-5 py-3.5 text-[11px] font-semibold text-slate-500 uppercase tracking-[0.08em]">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, i) => (
-                    <tr
-                      key={order.id}
-                      className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${i === orders.length - 1 ? 'border-none' : ''}`}
-                    >
-                      <td className="px-5 py-4 font-mono text-xs text-slate-400">
-                        ORD-{order.id.slice(-4).toUpperCase()}
-                      </td>
-                      <td className="px-5 py-4 text-sm font-medium text-white">{order.clientId.slice(0, 8)}...</td>
-                      <td className="px-5 py-4 text-sm text-slate-400 max-w-[220px] truncate">{order.description || '—'}</td>
-                      <td className="px-5 py-4 text-sm font-semibold text-white">{formatPHP(order.amount)}</td>
-                      <td className="px-5 py-4">
-                        <span className={`text-xs font-bold tracking-wide uppercase ${STATUS_COLORS[order.status] || 'text-slate-400'}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-xs text-slate-500">{formatOrderDate(order.createdAt)}</td>
-                    </tr>
-                  ))}
+                  {typedOrders.map((order, i) => {
+                    const nextStatuses = ORDER_STATUS_TRANSITIONS[order.status] || []
+                    const canCancel = nextStatuses.includes('CANCELLED')
+                    return (
+                      <tr
+                        key={order.id}
+                        className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors cursor-pointer ${i === typedOrders.length - 1 ? 'border-none' : ''}`}
+                        onClick={() => router.push(`/orders/${order.id}`)}
+                      >
+                        <td className="px-5 py-4 font-mono text-xs text-slate-400">
+                          ORD-{order.id.slice(-4).toUpperCase()}
+                        </td>
+                        <td className="px-5 py-4 text-sm font-medium text-white">
+                          {order.client?.name || `${order.clientId.slice(0, 8)}…`}
+                        </td>
+                        <td className="px-5 py-4 text-sm text-slate-400 max-w-[220px] truncate">{order.description || '—'}</td>
+                        <td className="px-5 py-4 text-sm font-semibold text-white">{formatPHP(order.amount)}</td>
+                        <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                          {canCreate && nextStatuses.filter(s => s !== 'CANCELLED').length > 0 ? (
+                            <select
+                              value={order.status}
+                              disabled={mutating && updatingId === order.id}
+                              onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                              className={`text-xs font-bold tracking-wide uppercase bg-transparent border border-white/10 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500/50 ${STATUS_COLORS[order.status] || 'text-slate-400'}`}
+                            >
+                              <option value={order.status}>{order.status}</option>
+                              {nextStatuses.filter(s => s !== 'CANCELLED').map(s => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className={`text-xs font-bold tracking-wide uppercase ${STATUS_COLORS[order.status] || 'text-slate-400'}`}>
+                              {order.status}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-4 text-xs text-slate-500">{formatOrderDate(order.createdAt)}</td>
+                        <td className="px-5 py-4" onClick={e => e.stopPropagation()}>
+                          {canCreate && canCancel && (
+                            <button
+                              onClick={() => { setCancelTarget(order.id); setCancelReason('') }}
+                              disabled={mutating && updatingId === order.id}
+                              className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-40 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -138,6 +230,43 @@ export default function OrdersPage() {
           </>
         )}
       </div>
+
+      <CreateOrderModal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        onSuccess={refetch}
+      />
+
+      {cancelTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setCancelTarget(null)} />
+          <div className="relative w-full max-w-sm rounded-2xl border border-white/10 bg-[#141820] p-5 space-y-4">
+            <h3 className="text-white font-semibold">Cancel order</h3>
+            <p className="text-slate-400 text-sm">Optionally provide a reason for cancellation.</p>
+            <input
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              placeholder="Reason…"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500/50"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setCancelTarget(null)}
+                className="px-4 py-2 rounded-xl text-sm text-slate-300 hover:bg-white/5"
+              >
+                Keep order
+              </button>
+              <button
+                onClick={handleCancelConfirm}
+                disabled={mutating}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50"
+              >
+                Confirm cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

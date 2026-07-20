@@ -13,11 +13,14 @@ import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
 import { isPermissionDenied } from '@/lib/api-errors'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useAuth } from '@/lib/auth-context'
+import { isSuperAdmin } from '@/lib/role-checks'
+import { SystemHealthPanel } from '@/components/dashboard/SystemHealthPanel'
 import { MOCK_USER } from '@/lib/mockData'
 
 export default function DashboardPage() {
   const { data, isLoading, error, isFromCache, isMock, refetch } = useDashboard()
   const { user } = useAuth()
+  const showSystemOverview = isSuperAdmin(user?.role)
 
   const displayUser = user
     ? { name: user.name, role: user.role }
@@ -144,6 +147,40 @@ export default function DashboardPage() {
           accent="#EAB308"
         />
       </div>
+
+      {showSystemOverview && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+          <div className="xl:col-span-1 min-w-0">
+            <SystemHealthPanel />
+          </div>
+          <div
+            className="xl:col-span-2 rounded-2xl border border-white/[0.06] p-5"
+            style={{ background: 'rgba(255,255,255,0.025)' }}
+          >
+            <h2 className="text-white font-semibold text-base mb-4">Platform Metrics</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-2xl font-bold text-white">{summary.activeClients}</p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-wide mt-1">All clients</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-emerald-400">{summary.totalOrders}</p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-wide mt-1">All orders</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-blue-400">{summary.pendingOrders}</p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-wide mt-1">Pending</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-white truncate">
+                  ₱{parseFloat(summary.totalRevenue).toLocaleString('en-PH', { maximumFractionDigits: 0 })}
+                </p>
+                <p className="text-[11px] text-slate-500 uppercase tracking-wide mt-1">Combined revenue</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2 min-w-0">

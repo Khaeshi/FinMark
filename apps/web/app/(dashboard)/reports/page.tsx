@@ -1,21 +1,25 @@
 'use client'
+import { useState } from 'react'
 import { sileo } from 'sileo'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, Plus, Download } from 'lucide-react'
 import { useReports } from '@/hooks/useReports'
+import { useAuth } from '@/lib/auth-context'
 import { formatPHP } from '@/lib/format'
+import { canManageFinancials, canViewFinancialColumns } from '@/lib/role-checks'
 import { ReportsSkeleton } from '@/components/dashboard/ReportsSkeleton'
 import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { CreateFinancialModal } from '@/components/reports/CreateFinancialModal'
 import { isPermissionDenied } from '@/lib/api-errors'
 
 interface FinancialItem {
-  id?:        string
-  clientId?:  string
-  period?:    string
-  revenue?:   string
-  expenses?:  string
-  netProfit?: string
+  id?:         string
+  clientId?:   string
+  period?:     string
+  revenue?:    string
+  expenses?:   string
+  netProfit?:  string
   orderCount?: number
-  client?:    { name: string; industry: string }
+  client?:     { name: string; industry: string }
 }
 
 const SUMMARY_ACCENTS = ['#10B981', '#F59E0B', '#3B82F6']
@@ -27,8 +31,34 @@ function marginBadgeClass(margin: number) {
   return 'bg-red-500/10 text-red-400 border-red-500/20'
 }
 
+function exportCsv(rows: FinancialItem[]) {
+  const header = ['Client', 'Period', 'Revenue', 'Expenses', 'Net Profit', 'Orders']
+  const lines = rows.map(f => [
+    f.client?.name || f.clientId || '',
+    f.period || '',
+    f.revenue || '0',
+    f.expenses || '0',
+    f.netProfit || '0',
+    String(f.orderCount ?? 0),
+  ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+
+  const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `finmark-financials-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function ReportsPage() {
+  const { user } = useAuth()
   const { financials, isLoading, error, refetch } = useReports()
+  const [showCreate, setShowCreate] = useState(false)
+  const [editRecord, setEditRecord] = useState<FinancialItem | null>(null)
+
+  const canManage = canManageFinancials(user?.role)
+  const canViewCols = canViewFinancialColumns(user?.role)
 
   if (isLoading && financials.length === 0 && !isPermissionDenied(error)) return <ReportsSkeleton />
 
@@ -63,12 +93,32 @@ export default function ReportsPage() {
           <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Reports</h1>
           <p className="text-slate-500 text-sm mt-1">Quarterly financial summaries per SME client</p>
         </div>
-        <button
-          onClick={() => { refetch(); sileo.success({ title: 'Reports refreshed' }) }}
-          className="text-xs px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:bg-white/[0.07] hover:text-white transition-all"
-        >
-          ↻ Refresh
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => { refetch(); sileo.success({ title: 'Reports refreshed' }) }}
+            className="text-xs px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:bg-white/[0.07] hover:text-white transition-all"
+          >
+            ↻ Refresh
+          </button>
+          {canViewCols && typedFinancials.length > 0 && (
+            <button
+              onClick={() => { exportCsv(typedFinancials); sileo.success({ title: 'CSV downloaded' }) }}
+              className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-300 hover:bg-white/[0.07] hover:text-white transition-all"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => { setEditRecord(null); setShowCreate(true) }}
+              className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-full bg-emerald-500 text-[#0d1117] font-semibold hover:bg-emerald-400 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Record
+            </button>
+          )}
+        </div>
       </div>
 
       {error && !isPermissionDenied(error) && (
@@ -77,7 +127,7 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {!isLoading && financials.length > 0 && (
+      {!isLoading && financials.length > 0 && canViewCols && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {summaryCards.map((card, i) => (
             <div
@@ -113,7 +163,7 @@ export default function ReportsPage() {
         ) : financials.length === 0 ? (
           <div className="p-16 flex flex-col items-center justify-center gap-3">
             <p className="text-slate-400 text-sm">No financial records found</p>
-            <p className="text-slate-600 text-xs">Run db:seed or add financial records to populate this view</p>
+            <p className="text-slate-600 text-xs">Add a record or run db:seed to populate this view</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -135,7 +185,12 @@ export default function ReportsPage() {
                   return (
                     <tr
                       key={f.id}
-                      className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${i === typedFinancials.length - 1 ? 'border-none' : ''}`}
+                      onClick={() => {
+                        if (!canManage || !f.id || !f.clientId) return
+                        setEditRecord(f)
+                        setShowCreate(true)
+                      }}
+                      className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${canManage ? 'cursor-pointer' : ''} ${i === typedFinancials.length - 1 ? 'border-none' : ''}`}
                     >
                       <td className="px-5 py-4 text-sm font-medium text-white">{f.client?.name || f.clientId?.slice(0, 8)}</td>
                       <td className="px-5 py-4 text-sm text-slate-400 font-mono">{f.period}</td>
@@ -158,6 +213,20 @@ export default function ReportsPage() {
           </div>
         )}
       </div>
+
+      <CreateFinancialModal
+        isOpen={showCreate}
+        onClose={() => { setShowCreate(false); setEditRecord(null) }}
+        onSuccess={refetch}
+        record={editRecord && editRecord.id && editRecord.clientId ? {
+          id: editRecord.id,
+          clientId: editRecord.clientId,
+          period: editRecord.period || '',
+          revenue: editRecord.revenue || '0',
+          expenses: editRecord.expenses || '0',
+          orderCount: editRecord.orderCount || 0,
+        } : null}
+      />
     </div>
   )
 }

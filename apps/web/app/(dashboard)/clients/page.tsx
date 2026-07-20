@@ -1,8 +1,14 @@
 'use client'
+import { useState } from 'react'
 import { sileo } from 'sileo'
+import { Plus, Pencil } from 'lucide-react'
 import { useClients } from '@/hooks/useClients'
+import { useUpdateClient } from '@/hooks/useUpdateClient'
+import { useAuth } from '@/lib/auth-context'
+import { canManageClients } from '@/lib/role-checks'
 import { ClientsSkeleton } from '@/components/dashboard/ClientsSkeleton'
 import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { CreateClientModal } from '@/components/clients/CreateClientModal'
 import { isPermissionDenied } from '@/lib/api-errors'
 
 const TIER_COLORS: Record<string, { badge: string; stat: string; avatar: string }> = {
@@ -21,8 +27,25 @@ function getInitials(name: string) {
   return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase()
 }
 
+interface ClientCard {
+  id: string
+  name: string
+  industry: string
+  country: string
+  subscriptionTier: string
+  isActive: boolean
+  createdAt: string
+  _count?: { users: number; orders: number }
+}
+
 export default function ClientsPage() {
+  const { user } = useAuth()
   const { clients, total, isLoading, error, refetch } = useClients()
+  const { updateClient, isLoading: updating } = useUpdateClient()
+  const [showModal, setShowModal] = useState(false)
+  const [editClient, setEditClient] = useState<ClientCard | null>(null)
+
+  const canManage = canManageClients(user?.role)
 
   if (isLoading && clients.length === 0 && !isPermissionDenied(error)) return <ClientsSkeleton />
 
@@ -38,6 +61,14 @@ export default function ClientsPage() {
     )
   }
 
+  async function toggleActive(client: ClientCard) {
+    const ok = await updateClient(client.id, { isActive: !client.isActive })
+    if (ok) {
+      sileo.success({ title: client.isActive ? 'Client deactivated' : 'Client reactivated' })
+      refetch()
+    }
+  }
+
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -45,12 +76,23 @@ export default function ClientsPage() {
           <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Clients</h1>
           <p className="text-slate-500 text-sm mt-1">{total} registered clients</p>
         </div>
-        <button
-          onClick={() => { refetch(); sileo.success({ title: 'Clients refreshed' }) }}
-          className="text-xs px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:bg-white/[0.07] hover:text-white transition-all"
-        >
-          ↻ Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { refetch(); sileo.success({ title: 'Clients refreshed' }) }}
+            className="text-xs px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:bg-white/[0.07] hover:text-white transition-all"
+          >
+            ↻ Refresh
+          </button>
+          {canManage && (
+            <button
+              onClick={() => { setEditClient(null); setShowModal(true) }}
+              className="flex items-center gap-1.5 text-xs px-4 py-2 rounded-full bg-emerald-500 text-[#0d1117] font-semibold hover:bg-emerald-400 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Client
+            </button>
+          )}
+        </div>
       </div>
 
       {error && !isPermissionDenied(error) && (
@@ -88,7 +130,7 @@ export default function ClientsPage() {
           style={{ background: 'rgba(255,255,255,0.025)' }}
         >
           <p className="text-slate-400 text-sm">No clients found</p>
-          <p className="text-slate-600 text-xs">Run db:seed to add sample SME clients</p>
+          <p className="text-slate-600 text-xs">Add a client or run db:seed</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -109,11 +151,36 @@ export default function ClientsPage() {
                       {client.subscriptionTier}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${client.isActive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                    <span className={`text-[11px] font-medium ${client.isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
-                      {client.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                  <div className="flex items-center gap-2">
+                    {canManage && (
+                      <>
+                        <button
+                          onClick={() => { setEditClient(client); setShowModal(true) }}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/5 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => toggleActive(client)}
+                          disabled={updating}
+                          className="flex items-center gap-1.5"
+                          title={client.isActive ? 'Deactivate' : 'Reactivate'}
+                        >
+                          <span className={`relative w-9 h-5 rounded-full transition-colors ${client.isActive ? 'bg-emerald-500' : 'bg-white/10'}`}>
+                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${client.isActive ? 'left-4' : 'left-0.5'}`} />
+                          </span>
+                        </button>
+                      </>
+                    )}
+                    {!canManage && (
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${client.isActive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                        <span className={`text-[11px] font-medium ${client.isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
+                          {client.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -138,6 +205,13 @@ export default function ClientsPage() {
           })}
         </div>
       )}
+
+      <CreateClientModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditClient(null) }}
+        onSuccess={refetch}
+        client={editClient}
+      />
     </div>
   )
 }

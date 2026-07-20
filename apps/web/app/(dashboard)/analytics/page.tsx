@@ -7,13 +7,20 @@ import { MetricCard } from '@/components/dashboard/MetricCard'
 import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
 import { OrderStatusChart } from '@/components/analytics/OrderStatusChart'
 import { ClientRevenueChart } from '@/components/analytics/ClientRevenueChart'
+import {
+  OrdersByPeriodChart,
+  RevenueTrendChart,
+  PeakOrderHeatmap,
+} from '@/components/analytics/AnalyticsCharts'
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
 import { formatPHP } from '@/lib/format'
 
 export default function AnalyticsPage() {
   const {
     dashboard, isLoading, error, permissionDenied,
-    orderStatusBreakdown, clientRevenue, refetch,
+    orderStatusBreakdown, clientRevenue,
+    ordersByPeriod, revenueTrend, peakHeatmap,
+    refetch,
   } = useAnalytics()
 
   if (isLoading && !dashboard) return <DashboardSkeleton />
@@ -112,6 +119,24 @@ export default function AnalyticsPage() {
           className="rounded-2xl border border-white/[0.06] p-5 lg:p-6"
           style={{ background: 'rgba(255,255,255,0.025)' }}
         >
+          <h2 className="text-white font-semibold text-base mb-1">Orders by Period</h2>
+          <p className="text-slate-500 text-xs mb-4">Monthly order volume</p>
+          <OrdersByPeriodChart data={ordersByPeriod} />
+        </div>
+
+        <div
+          className="rounded-2xl border border-white/[0.06] p-5 lg:p-6"
+          style={{ background: 'rgba(255,255,255,0.025)' }}
+        >
+          <h2 className="text-white font-semibold text-base mb-1">Revenue Trend by Client</h2>
+          <p className="text-slate-500 text-xs mb-4">Top clients across quarters</p>
+          <RevenueTrendChart data={revenueTrend.data} clients={revenueTrend.clients} />
+        </div>
+
+        <div
+          className="rounded-2xl border border-white/[0.06] p-5 lg:p-6"
+          style={{ background: 'rgba(255,255,255,0.025)' }}
+        >
           <h2 className="text-white font-semibold text-base mb-1">Order Pipeline</h2>
           <p className="text-slate-500 text-xs mb-4">Status breakdown from recent orders</p>
           <OrderStatusChart data={orderStatusBreakdown} />
@@ -119,6 +144,15 @@ export default function AnalyticsPage() {
 
         <div
           className="rounded-2xl border border-white/[0.06] p-5 lg:p-6"
+          style={{ background: 'rgba(255,255,255,0.025)' }}
+        >
+          <h2 className="text-white font-semibold text-base mb-1">Peak Order Times</h2>
+          <p className="text-slate-500 text-xs mb-4">Day × hour heatmap (3-hour buckets)</p>
+          <PeakOrderHeatmap data={peakHeatmap} />
+        </div>
+
+        <div
+          className="xl:col-span-2 rounded-2xl border border-white/[0.06] p-5 lg:p-6"
           style={{ background: 'rgba(255,255,255,0.025)' }}
         >
           <h2 className="text-white font-semibold text-base mb-1">Top Clients by Revenue</h2>
