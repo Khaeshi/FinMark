@@ -5,7 +5,13 @@
  * scaling demo is not blocked by per-IP limits (all VUs share one IP).
  */
 
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
+import type { Request } from 'express'
+
+function userOrIpKey(req: Pick<Request, 'ip'> & { user?: { sub?: string } }) {
+  if (req.user?.sub) return req.user.sub
+  return ipKeyGenerator(req.ip ?? '')
+}
 
 function skipLoadTestOrDev(req: { path?: string; headers: Record<string, unknown> }) {
   return (
@@ -32,9 +38,7 @@ export const rateLimiter = rateLimit({
 export const strictRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
-  keyGenerator: (req) => {
-    return req.user?.sub || req.ip || 'unknown'
-  },
+  keyGenerator: userOrIpKey,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -49,9 +53,7 @@ export const strictRateLimiter = rateLimit({
 export const dashboardRateLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 60,
-  keyGenerator: (req) => {
-    return req.user?.sub || req.ip || 'unknown'
-  },
+  keyGenerator: userOrIpKey,
   message: {
     success: false,
     error: 'Dashboard request limit reached. Please wait a moment.',
