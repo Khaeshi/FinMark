@@ -1,0 +1,271 @@
+# FinMark Docker Swarm stack
+# Companion to docker-compose.scale.yml (Compose = local multi-container demo;
+# this file = Swarm replicas + live scale / self-healing demo).
+#
+# Deploy (from repo root, after building images):
+#   bash infra/docker/swarm-commands.sh init
+#   bash infra/docker/swarm-commands.sh build
+#   bash infra/docker/swarm-commands.sh deploy
+#
+# NOTE: `docker stack deploy` ignores env_file. The deploy script merges
+# ../../.env via `docker compose config` before deploying.
+
+version: '3.8'
+
+services:
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/nginx.conf
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+    networks:
+      - finmark-overlay
+
+  api-gateway:
+    image: finmark/api-gateway:latest
+    environment:
+      - PORT=4000
+      # development enables /api/auth/dev-login + soft JWT verify for demos
+      - NODE_ENV=development
+      - USER_AUTH_SVC_URL=http://user-auth-svc:4001
+      - ORDER_SVC_URL=http://order-svc:4002
+      - REPORT_SVC_URL=http://report-svc:4003
+      - PRODUCT_SVC_URL=http://product-svc:4004
+      - ADMIN_SVC_URL=http://admin-svc:4005
+      - FEEDBACK_SVC_URL=http://feedback-svc:4006
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  report-svc:
+    image: finmark/report-svc:latest
+    environment:
+      - PORT=4003
+      - NODE_ENV=production
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  user-auth-svc:
+    image: finmark/user-auth-svc:latest
+    environment:
+      - PORT=4001
+      - NODE_ENV=development
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  order-svc:
+    image: finmark/order-svc:latest
+    environment:
+      - PORT=4002
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  admin-svc:
+    image: finmark/admin-svc:latest
+    environment:
+      - PORT=4005
+      - NODE_ENV=production
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  product-svc:
+    image: finmark/product-svc:latest
+    environment:
+      - PORT=4004
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  feedback-svc:
+    image: finmark/feedback-svc:latest
+    environment:
+      - PORT=4006
+      - NODE_ENV=production
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:4006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - finmark-overlay
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=1h'
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - finmark-overlay
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3100:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=finmark123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      # bind mount OK for single-node demo; manager-only placement
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - finmark-overlay
+
+networks:
+  finmark-overlay:
+    driver: overlay
+    attachable: true
+
+configs:
+  nginx_config:
+    file: ./nginx.swarm.conf
+  prometheus_config:
+    file: ./prometheus.swarm.yml

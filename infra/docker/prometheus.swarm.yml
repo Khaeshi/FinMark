@@ -1,0 +1,56 @@
+# Prometheus scrape config for Docker Swarm
+# Uses DNS service discovery of Swarm tasks.* so every replica is scraped.
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'api-gateway'
+    dns_sd_configs:
+      - names: ['tasks.api-gateway']
+        type: 'A'
+        port: 4000
+    metrics_path: '/metrics'
+
+  - job_name: 'report-svc'
+    dns_sd_configs:
+      - names: ['tasks.report-svc']
+        type: 'A'
+        port: 4003
+    metrics_path: '/metrics'
+
+  - job_name: 'order-svc'
+    dns_sd_configs:
+      - names: ['tasks.order-svc']
+        type: 'A'
+        port: 4002
+    metrics_path: '/metrics'
+
+  - job_name: 'admin-svc'
+    dns_sd_configs:
+      - names: ['tasks.admin-svc']
+        type: 'A'
+        port: 4005
+    metrics_path: '/metrics'
+
+  - job_name: 'user-auth-svc'
+    dns_sd_configs:
+      - names: ['tasks.user-auth-svc']
+        type: 'A'
+        port: 4001
+    metrics_path: '/metrics'
+
+  - job_name: 'feedback-svc'
+    dns_sd_configs:
+      - names: ['tasks.feedback-svc']
+        type: 'A'
+        port: 4006
+    metrics_path: '/metrics'
+
+  - job_name: 'product-svc'
+    dns_sd_configs:
+      - names: ['tasks.product-svc']
+        type: 'A'
+        port: 4004
+    metrics_path: '/metrics'
