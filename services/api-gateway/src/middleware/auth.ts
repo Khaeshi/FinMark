@@ -55,6 +55,7 @@ function isPublicRoute(path: string, method: string): boolean {
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  if (req.method === 'OPTIONS') return next()
   if (isPublicRoute(req.path, req.method)) return next()
 
   const authHeader = req.headers.authorization

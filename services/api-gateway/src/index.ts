@@ -59,13 +59,14 @@ const httpRequestTotal = new Counter({
 app.use(helmet())
 
 /**
- * Preflight (OPTIONS) short-circuit
- * Railway is returning 502 for OPTIONS to /api/auth/login; handle it at the gateway
- * so auth/proxy middlewares do not run for CORS preflight.
+ * Preflight (OPTIONS) short-circuit — use middleware instead of app.options('*')
+ * because Express 5 / path-to-regexp v8 rejects bare '*' wildcards.
  */
-app.options('*', (req, res) => {
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') return next()
+
   const origin = req.headers.origin as string | undefined
-  if (isAllowedOrigin(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Vary', 'Origin')
     res.setHeader('Access-Control-Allow-Credentials', 'true')
@@ -73,7 +74,7 @@ app.options('*', (req, res) => {
 
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-request-id')
-  res.sendStatus(204)
+  return res.sendStatus(204)
 })
 
 /**
