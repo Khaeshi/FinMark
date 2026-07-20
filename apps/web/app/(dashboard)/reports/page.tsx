@@ -4,6 +4,8 @@ import { TrendingUp } from 'lucide-react'
 import { useReports } from '@/hooks/useReports'
 import { formatPHP } from '@/lib/format'
 import { ReportsSkeleton } from '@/components/dashboard/ReportsSkeleton'
+import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { isPermissionDenied } from '@/lib/api-errors'
 
 interface FinancialItem {
   id?:        string
@@ -28,7 +30,19 @@ function marginBadgeClass(margin: number) {
 export default function ReportsPage() {
   const { financials, isLoading, error, refetch } = useReports()
 
-  if (isLoading && financials.length === 0) return <ReportsSkeleton />
+  if (isLoading && financials.length === 0 && !isPermissionDenied(error)) return <ReportsSkeleton />
+
+  if (!isLoading && isPermissionDenied(error)) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6">
+        <div>
+          <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Reports</h1>
+          <p className="text-slate-500 text-sm mt-1">Quarterly financial summaries per SME client</p>
+        </div>
+        <PermissionDenied />
+      </div>
+    )
+  }
 
   const typedFinancials = financials as FinancialItem[]
 
@@ -57,7 +71,7 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      {error && (
+      {error && !isPermissionDenied(error) && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
           <p className="text-red-400 text-sm">⚠ {error}</p>
         </div>

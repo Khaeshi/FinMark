@@ -2,6 +2,8 @@
 import { sileo } from 'sileo'
 import { useClients } from '@/hooks/useClients'
 import { ClientsSkeleton } from '@/components/dashboard/ClientsSkeleton'
+import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { isPermissionDenied } from '@/lib/api-errors'
 
 const TIER_COLORS: Record<string, { badge: string; stat: string; avatar: string }> = {
   FREE:       { badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',       stat: 'text-slate-400',   avatar: 'from-slate-500 to-slate-600' },
@@ -22,7 +24,19 @@ function getInitials(name: string) {
 export default function ClientsPage() {
   const { clients, total, isLoading, error, refetch } = useClients()
 
-  if (isLoading && clients.length === 0) return <ClientsSkeleton />
+  if (isLoading && clients.length === 0 && !isPermissionDenied(error)) return <ClientsSkeleton />
+
+  if (!isLoading && isPermissionDenied(error)) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6">
+        <div>
+          <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Clients</h1>
+          <p className="text-slate-500 text-sm mt-1">Client management</p>
+        </div>
+        <PermissionDenied />
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -39,7 +53,7 @@ export default function ClientsPage() {
         </button>
       </div>
 
-      {error && (
+      {error && !isPermissionDenied(error) && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
           <p className="text-red-400 text-sm">⚠ {error}</p>
         </div>

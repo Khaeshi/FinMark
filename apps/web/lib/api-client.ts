@@ -1,4 +1,5 @@
 import type { ApiResponse, DashboardData, Order, PaginatedResponse } from '@finmark/shared'
+import { parseApiResponseError } from './api-errors'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true'
@@ -18,8 +19,7 @@ async function apiFetch<T>(
   })
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(error.error || `HTTP ${res.status}`)
+    throw new Error(await parseApiResponseError(res))
   }
 
   return res.json()

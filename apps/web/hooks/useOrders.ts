@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { parseApiResponseError } from '@/lib/api-errors'
 import type { Order, OrderStatus } from '@finmark/shared'
 
 interface OrdersResult {
@@ -48,7 +49,7 @@ export function useOrders(): UseOrdersResult {
         headers: { Authorization: `Bearer ${tokens.accessToken}` },
       })
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) throw new Error(await parseApiResponseError(res))
       const json = await res.json()
 
       setOrders(json.data || [])

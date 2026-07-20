@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
+import { parseApiResponseError } from '@/lib/api-errors'
 
 interface SMEClient {
   id:               string
@@ -38,7 +39,7 @@ export function useClients(): UseClientsResult {
       const res = await fetch(`${API_URL}/api/admin/clients`, {
         headers: { Authorization: `Bearer ${tokens.accessToken}` },
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) throw new Error(await parseApiResponseError(res))
       const json = await res.json()
       setClients(json.data || [])
       setTotal(json.total || 0)

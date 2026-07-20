@@ -2,6 +2,8 @@
 import { useOrders } from '@/hooks/useOrders'
 import { formatPHP } from '@/lib/format'
 import { OrdersSkeleton } from '@/components/dashboard/OrdersSkeleton'
+import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { isPermissionDenied } from '@/lib/api-errors'
 import type { OrderStatus } from '@finmark/shared'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -22,7 +24,19 @@ function formatOrderDate(date: Date | string) {
 export default function OrdersPage() {
   const { orders, total, isLoading, error, page, hasMore, setPage, setStatus, status } = useOrders()
 
-  if (isLoading && orders.length === 0) return <OrdersSkeleton />
+  if (isLoading && orders.length === 0 && !isPermissionDenied(error)) return <OrdersSkeleton />
+
+  if (!isLoading && isPermissionDenied(error)) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6">
+        <div>
+          <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Orders</h1>
+          <p className="text-slate-500 text-sm mt-1">Order management</p>
+        </div>
+        <PermissionDenied />
+      </div>
+    )
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / 10))
 
@@ -33,7 +47,7 @@ export default function OrdersPage() {
           <h1 className="text-2xl lg:text-[28px] font-bold text-white tracking-tight">Orders</h1>
           <p className="text-slate-500 text-sm mt-1">{total} total orders</p>
         </div>
-        {error && (
+        {error && !isPermissionDenied(error) && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">
             <p className="text-red-400 text-sm">⚠ {error}</p>
           </div>

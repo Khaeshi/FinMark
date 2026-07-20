@@ -2,11 +2,11 @@
  * @author Khaesey Angel Tablante
  */
 
-
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import jwksRsa from 'jwks-rsa'
 import type { JwtPayload, UserRole } from '@finmark/shared'
+import { resolveUserFromDatabase } from '../services/userLookup'
 
 declare global {
   namespace Express {
@@ -46,15 +46,36 @@ const PUBLIC_ROUTES = [
 ]
 
 function isPublicRoute(path: string, method: string): boolean {
-  console.log('Checking path:', path, method)
-  const match = PUBLIC_ROUTES.some(
+  return PUBLIC_ROUTES.some(
     route => path.startsWith(route.path) && route.method === method
   )
-  console.log('Is public:', match)  
-  return match
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+function verifyCognitoToken(token: string): Promise<JwtPayload> {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, getSigningKey, {
+      algorithms: ['RS256'],
+      issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
+    }, (err, decoded) => {
+      if (err) reject(err)
+      else resolve(decoded as JwtPayload)
+    })
+  })
+}
+
+async function attachDatabaseRole(decoded: JwtPayload): Promise<JwtPayload | null> {
+  const dbUser = await resolveUserFromDatabase(decoded.sub)
+  if (!dbUser) return null
+
+  return {
+    ...decoded,
+    email:    dbUser.email,
+    role:     dbUser.role,
+    clientId: dbUser.clientId,
+  }
+}
+
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.method === 'OPTIONS') return next()
   if (isPublicRoute(req.path, req.method)) return next()
 
@@ -65,36 +86,38 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   const token = authHeader.split(' ')[1]
 
-  /**
-   * Dev token path
-   */
-  if (IS_DEV) {
-    try {
-      const decoded = jwt.verify(token, DEV_SECRET) as JwtPayload
-      req.user = decoded
-      return next()
-    } catch {
-      // not a dev token — fall through to Cognito verification
-    }
-  }
+  try {
+    let decoded: JwtPayload | null = null
 
-  /**
-   * Production Cognito token path
-   */
-  if (!process.env.COGNITO_USER_POOL_ID) {
-    return res.status(401).json({ success: false, error: 'Auth not configured' })
-  }
-
-  jwt.verify(token, getSigningKey, {
-    algorithms: ['RS256'],
-    issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
-  }, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ success: false, error: 'Invalid or expired token' })
+    if (IS_DEV) {
+      try {
+        decoded = jwt.verify(token, DEV_SECRET) as JwtPayload
+      } catch {
+        // not a dev token — fall through to Cognito verification
+      }
     }
-    req.user = decoded as JwtPayload
+
+    if (!decoded) {
+      if (!process.env.COGNITO_USER_POOL_ID) {
+        return res.status(401).json({ success: false, error: 'Auth not configured' })
+      }
+      decoded = await verifyCognitoToken(token)
+    }
+
+    // Roles live in our DB, not in Cognito tokens — resolve on every request
+    const user = await attachDatabaseRole(decoded)
+    if (!user) {
+      return res.status(403).json({
+        success: false,
+        error: 'Account not found or inactive. Try signing out and back in.',
+      })
+    }
+
+    req.user = user
     next()
-  })
+  } catch {
+    return res.status(401).json({ success: false, error: 'Invalid or expired token' })
+  }
 }
 
 export function requireRole(...roles: UserRole[]) {
