@@ -57,7 +57,7 @@ function makeProxy(target: string, rewrite?: Record<string, string>) {
 /**
  * Auth Service
  */
-router.use('/auth', makeProxy(SERVICES.auth,  { '^/api/auth': '' }))
+router.use('/auth', makeProxy(SERVICES.auth,  { '^/auth': '' }))
 
 /**
  * Orders Service
@@ -65,7 +65,7 @@ router.use('/auth', makeProxy(SERVICES.auth,  { '^/api/auth': '' }))
 router.use(
   '/orders',
   requireRole('SUPERADMIN', 'ADMIN', 'OPERATIONS'),
-  makeProxy(SERVICES.orders,   { '^/api/orders': '' })
+  makeProxy(SERVICES.orders,   { '^/orders': '' })
 )
 
 /**
@@ -74,7 +74,7 @@ router.use(
 router.use(
   '/reports',
   requireRole('SUPERADMIN', 'ADMIN', 'FINANCE', 'ANALYST'),
-  makeProxy(SERVICES.reports,  { '^/api/reports': '' })
+  makeProxy(SERVICES.reports,  { '^/reports': '' })
 )
 
 /**
@@ -83,7 +83,7 @@ router.use(
 router.use(
   '/products',
   requireRole('SUPERADMIN', 'ADMIN', 'OPERATIONS'),
-  makeProxy(SERVICES.products, { '^/api/products': '' })
+  makeProxy(SERVICES.products, { '^/products': '' })
 )
 
 /**
@@ -92,13 +92,13 @@ router.use(
 router.use(
   '/admin',
   requireRole('SUPERADMIN', 'ADMIN'),
-  makeProxy(SERVICES.admin,    { '^/api/admin': '' })
+  makeProxy(SERVICES.admin,    { '^/admin': '' })
 )
 
 /**
  * Feedback Service
  */
-router.use('/feedback', makeProxy(SERVICES.feedback, { '^/api/feedback': '' }))
+router.use('/feedback', makeProxy(SERVICES.feedback, { '^/feedback': '' }))
 
 /**
  * Dashboard
@@ -106,7 +106,8 @@ router.use('/feedback', makeProxy(SERVICES.feedback, { '^/api/feedback': '' }))
 router.use(
   '/dashboard',
   requireRole('SUPERADMIN', 'ADMIN', 'FINANCE', 'OPERATIONS', 'ANALYST', 'VIEWER'),
-  makeProxy(SERVICES.reports, { '^/': '/dashboard' })
+  // dashboard routes are defined in report-svc under '/dashboard/...'
+  makeProxy(SERVICES.reports, { '^/dashboard': '/dashboard' })
 )
 
 export { router as proxyRoutes }
