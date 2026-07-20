@@ -126,7 +126,7 @@ export default function UsersPage() {
                           value={u.role}
                           disabled={busy || u.id === user?.id}
                           onChange={e => handleRoleChange(u.id, e.target.value as UserRole)}
-                          className="text-xs font-semibold bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-white focus:outline-none focus:border-emerald-500/50 disabled:opacity-40"
+                          className="text-xs font-semibold bg-[#141820] border border-white/10 rounded-lg px-2 py-1.5 text-white focus:outline-none focus:border-emerald-500/50 disabled:opacity-40"
                         >
                           {USER_ROLES.map(r => (
                             <option key={r} value={r}>{r}</option>
@@ -138,7 +138,7 @@ export default function UsersPage() {
                           value={u.clientId || ''}
                           disabled={busy}
                           onChange={e => handleAssign(u.id, e.target.value)}
-                          className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:border-emerald-500/50 disabled:opacity-40 max-w-[160px]"
+                          className="text-xs bg-[#141820] border border-white/10 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:border-emerald-500/50 disabled:opacity-40 max-w-[160px]"
                         >
                           <option value="">{u.client?.name || 'Unassigned'}</option>
                           {clients.map(c => (

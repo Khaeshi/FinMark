@@ -152,30 +152,29 @@ export function CreateOrderModal({ isOpen, onClose, onSuccess }: Props) {
           <FormError message={touched.clientId ? errors.clientId : undefined} />
         </FormField>
 
-        <div className="grid grid-cols-3 gap-3">
-          <FormField className="col-span-2">
-            <FormLabel required>Amount</FormLabel>
-            <FormInput
-              type="text"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              onBlur={() => handleBlur('amount')}
-              hasError={touched.amount && !!errors.amount}
-              disabled={!!flagNotice}
-            />
-            <FormError message={touched.amount ? errors.amount : undefined} />
-          </FormField>
-          <FormField>
-            <FormLabel>Currency</FormLabel>
-            <FormSelect value={currency} onChange={e => setCurrency(e.target.value)} disabled={!!flagNotice}>
-              <option value="PHP">PHP</option>
-              <option value="USD">USD</option>
-              <option value="SGD">SGD</option>
-            </FormSelect>
-          </FormField>
-        </div>
+        <FormField>
+          <FormLabel required>Amount (PHP)</FormLabel>
+          <FormInput
+            type="text"
+            inputMode="decimal"
+            placeholder="e.g. 15000.00"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            onBlur={() => handleBlur('amount')}
+            hasError={touched.amount && !!errors.amount}
+            disabled={!!flagNotice}
+          />
+          <FormError message={touched.amount ? errors.amount : undefined} />
+        </FormField>
+
+        <FormField>
+          <FormLabel>Currency</FormLabel>
+          <FormSelect value={currency} onChange={e => setCurrency(e.target.value)} disabled={!!flagNotice}>
+            <option value="PHP">PHP — Philippine Peso</option>
+            <option value="USD">USD — US Dollar</option>
+            <option value="SGD">SGD — Singapore Dollar</option>
+          </FormSelect>
+        </FormField>
 
         <FormField>
           <FormLabel>Description</FormLabel>

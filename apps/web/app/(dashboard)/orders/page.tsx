@@ -192,7 +192,7 @@ export default function OrdersPage() {
                               value={order.status}
                               disabled={mutating && updatingId === order.id}
                               onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                              className={`text-xs font-bold tracking-wide uppercase bg-transparent border border-white/10 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500/50 ${STATUS_COLORS[order.status] || 'text-slate-400'}`}
+                              className={`text-xs font-bold tracking-wide uppercase bg-[#141820] border border-white/10 rounded-lg px-2 py-1 focus:outline-none focus:border-emerald-500/50 ${STATUS_COLORS[order.status] || 'text-slate-400'}`}
                             >
                               <option value={order.status}>{order.status}</option>
                               {nextStatuses.filter(s => s !== 'CANCELLED').map(s => (
