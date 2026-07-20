@@ -15,16 +15,29 @@ export async function syncUserToDatabase(
   email: string,
   name: string
 ) {
+  const displayName = name?.trim() || email.split('@')[0]
+
+  // Cognito user may be re-created with the same email but a new sub
+  const existingByEmail = await prisma.user.findUnique({ where: { email } })
+  if (existingByEmail && existingByEmail.cognitoId !== cognitoId) {
+    const user = await prisma.user.update({
+      where: { email },
+      data: { cognitoId, name: displayName, lastLoginAt: new Date() },
+    })
+    logger.info('User re-linked to new Cognito sub', { userId: user.id, email })
+    return user
+  }
+
   const user = await prisma.user.upsert({
     where: { cognitoId },
     update: {
       lastLoginAt: new Date(),
-      name,             
+      name: displayName,
     },
     create: {
       cognitoId,
       email,
-      name,
+      name: displayName,
       role: 'VIEWER',   // default role — admin upgrades manually
     },
   })

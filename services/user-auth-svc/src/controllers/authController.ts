@@ -78,7 +78,7 @@ export async function login(req: Request, res: Response) {
     const dbUser = await syncUserToDatabase(
       cognitoUser.cognitoId!,
       cognitoUser.email!,
-      cognitoUser.name!
+      cognitoUser.name || email.split('@')[0]
     )
 
     // audit log
