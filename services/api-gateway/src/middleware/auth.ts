@@ -51,27 +51,43 @@ function isPublicRoute(path: string, method: string): boolean {
   )
 }
 
-function verifyCognitoToken(token: string): Promise<JwtPayload> {
+function verifyCognitoToken(token: string): Promise<jwt.JwtPayload> {
   return new Promise((resolve, reject) => {
     jwt.verify(token, getSigningKey, {
       algorithms: ['RS256'],
       issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
     }, (err, decoded) => {
       if (err) reject(err)
-      else resolve(decoded as JwtPayload)
+      else resolve(decoded as jwt.JwtPayload)
     })
   })
 }
 
-async function attachDatabaseRole(decoded: JwtPayload): Promise<JwtPayload | null> {
-  const dbUser = await resolveUserFromDatabase(decoded.sub)
+/** Cognito access tokens carry `username` (often email); ID tokens carry `email`. */
+function getEmailHint(decoded: jwt.JwtPayload): string | undefined {
+  const email = typeof decoded.email === 'string' ? decoded.email : undefined
+  const username = typeof decoded.username === 'string' ? decoded.username : undefined
+  if (email) return email
+  if (username?.includes('@')) return username
+  return undefined
+}
+
+async function attachDatabaseRole(
+  decoded: jwt.JwtPayload,
+  emailHint?: string
+): Promise<JwtPayload | null> {
+  if (!decoded.sub) return null
+
+  const dbUser = await resolveUserFromDatabase(decoded.sub, emailHint)
   if (!dbUser) return null
 
   return {
-    ...decoded,
+    sub:      decoded.sub,
     email:    dbUser.email,
     role:     dbUser.role,
     clientId: dbUser.clientId,
+    iat:      decoded.iat ?? 0,
+    exp:      decoded.exp ?? 0,
   }
 }
 
@@ -87,11 +103,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   const token = authHeader.split(' ')[1]
 
   try {
-    let decoded: JwtPayload | null = null
+    let decoded: jwt.JwtPayload | null = null
 
     if (IS_DEV) {
       try {
-        decoded = jwt.verify(token, DEV_SECRET) as JwtPayload
+        decoded = jwt.verify(token, DEV_SECRET) as jwt.JwtPayload
       } catch {
         // not a dev token — fall through to Cognito verification
       }
@@ -104,8 +120,8 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       decoded = await verifyCognitoToken(token)
     }
 
-    // Roles live in our DB, not in Cognito tokens — resolve on every request
-    const user = await attachDatabaseRole(decoded)
+    const emailHint = getEmailHint(decoded)
+    const user = await attachDatabaseRole(decoded, emailHint)
     if (!user) {
       return res.status(403).json({
         success: false,
@@ -115,7 +131,14 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
     req.user = user
     next()
-  } catch {
+  } catch (err) {
+    console.error(JSON.stringify({
+      level: 'error',
+      service: 'api-gateway',
+      message: 'Auth middleware failed',
+      error: err instanceof Error ? err.message : String(err),
+      timestamp: new Date().toISOString(),
+    }))
     return res.status(401).json({ success: false, error: 'Invalid or expired token' })
   }
 }

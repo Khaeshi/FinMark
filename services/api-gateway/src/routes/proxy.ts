@@ -30,6 +30,9 @@ function makeProxy(target: string, rewrite?: Record<string, string>) {
         if (req.user) {
           proxyReq.setHeader('x-user-id', req.user.sub)
           proxyReq.setHeader('x-user-role', req.user.role)
+          if (req.user.email) {
+            proxyReq.setHeader('x-user-email', req.user.email)
+          }
           if (req.user.clientId) {
             proxyReq.setHeader('x-user-client-id', req.user.clientId)
           }

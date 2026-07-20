@@ -9,6 +9,8 @@ import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { OrderTable } from '@/components/dashboard/OrderTable'
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton'
+import { PermissionDenied } from '@/components/dashboard/PermissionDenied'
+import { isPermissionDenied } from '@/lib/api-errors'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useAuth } from '@/lib/auth-context'
 import { MOCK_USER } from '@/lib/mockData'
@@ -23,9 +25,25 @@ export default function DashboardPage() {
 
   if (isLoading) return <DashboardSkeleton />
 
+  if (!isLoading && isPermissionDenied(error)) {
+    return (
+      <div className="p-6 lg:p-8 space-y-6">
+        <DashboardHeader
+          user={displayUser}
+          lastUpdated={new Date()}
+          isMock={false}
+          error={error}
+        />
+        <PermissionDenied />
+      </div>
+    )
+  }
+
   if (!data) return (
     <div className="p-8 flex flex-col items-center justify-center h-full gap-3">
-      <p className="text-slate-400">No dashboard data available.</p>
+      <p className="text-slate-400">
+        {error ?? 'No dashboard data available.'}
+      </p>
       <button
         onClick={refetch}
         className="text-emerald-400 text-sm hover:text-emerald-300 transition-colors"

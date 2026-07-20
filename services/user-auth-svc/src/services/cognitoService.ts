@@ -3,6 +3,7 @@
  */
 
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
@@ -160,7 +161,7 @@ export async function refreshSession(refreshToken: string, username?: string) {
 /**
  * Get User from Token
  * @param accessToken 
- * @returns cognitoId, email, name.
+ * @returns cognitoId (JWT sub), email, name.
  */
 export async function getUserFromToken(accessToken: string) {
   const command = new GetUserCommand({ AccessToken: accessToken })
@@ -170,10 +171,14 @@ export async function getUserFromToken(accessToken: string) {
     (response.UserAttributes || []).map(a => [a.Name, a.Value])
   )
 
+  // Gateway authorizes using JWT `sub`, not Cognito Username (often the email)
+  const decoded = jwt.decode(accessToken) as { sub?: string } | null
+  const cognitoId = decoded?.sub || response.Username
+
   return {
-    cognitoId: response.Username,
-    email:     attrs['email'],
-    name:      attrs['name'],
+    cognitoId,
+    email: attrs['email'] || response.Username,
+    name:  attrs['name'],
   }
 }
 

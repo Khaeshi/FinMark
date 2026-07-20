@@ -42,6 +42,18 @@ async function buildDashboardFromViews(
   clientId: string | undefined,
   role: UserRole
 ): Promise<DashboardData> {
+  try {
+    return await queryDashboardViews(clientId)
+  } catch (err) {
+    logger.warn('Materialized view query failed, using direct DB fallback', {
+      clientId,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return buildDashboardFallback(clientId)
+  }
+}
+
+async function queryDashboardViews(clientId: string | undefined): Promise<DashboardData> {
   const [summaryRows, recentOrders, chartData] = await Promise.all([
 
     clientId
@@ -90,6 +102,57 @@ async function buildDashboardFromViews(
       totalOrders:   Number(summary.total_orders) || 0,
       activeClients: Number(summary.active_clients) || 0,
       pendingOrders: Number(summary.pending_orders) || 0,
+    },
+    recentOrders: recentOrders.map(o => ({
+      ...o,
+      amount:      o.amount.toString(),
+      description: o.description ?? undefined,
+    })),
+    revenueChart: chartData.map(f => ({
+      date:     f.period,
+      revenue:  f.revenue.toString(),
+      expenses: f.expenses.toString(),
+      profit:   f.netProfit.toString(),
+    })),
+    lastUpdated: new Date(),
+  }
+}
+
+async function buildDashboardFallback(clientId?: string): Promise<DashboardData> {
+  const orderWhere  = clientId ? { clientId } : {}
+  const clientWhere = clientId ? { id: clientId, isActive: true } : { isActive: true }
+
+  const [activeClients, orderStats, pendingOrders, recentOrders, chartData] = await Promise.all([
+    prisma.sMEClient.count({ where: clientWhere }),
+    prisma.order.aggregate({
+      where: orderWhere,
+      _count: { id: true },
+      _sum:   { amount: true },
+    }),
+    prisma.order.count({ where: { ...orderWhere, status: 'PENDING' } }),
+    prisma.order.findMany({
+      where:   orderWhere,
+      orderBy: { createdAt: 'desc' },
+      take:    10,
+      select: {
+        id: true, clientId: true, status: true, amount: true,
+        currency: true, description: true, createdAt: true, updatedAt: true,
+      },
+    }),
+    prisma.financial.findMany({
+      where:   clientId ? { clientId } : undefined,
+      orderBy: { period: 'desc' },
+      take:    8,
+      select: { period: true, revenue: true, expenses: true, netProfit: true },
+    }),
+  ])
+
+  return {
+    summary: {
+      totalRevenue:  orderStats._sum.amount?.toString() || '0',
+      totalOrders:   orderStats._count.id || 0,
+      activeClients,
+      pendingOrders,
     },
     recentOrders: recentOrders.map(o => ({
       ...o,

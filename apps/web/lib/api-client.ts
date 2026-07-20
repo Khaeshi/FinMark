@@ -148,3 +148,33 @@ export async function fetchFinancialReports(token: string): Promise<FinancialRec
   const res = await apiFetch<ApiResponse<FinancialRecord[]>>('/reports/financials', {}, token)
   return res.data || []
 }
+
+export interface UserProfile {
+  id:        string
+  cognitoId: string
+  email:     string
+  name:      string
+  role:      string
+  clientId?: string
+  client?:   { id: string; name: string; industry: string }
+  isActive:  boolean
+}
+
+export async function fetchUserProfile(token: string): Promise<UserProfile> {
+  const res = await apiFetch<ApiResponse<UserProfile>>('/auth/profile', {}, token)
+  if (!res.data) throw new Error('Profile not found')
+  return res.data
+}
+
+export async function forgotPasswordRequest(email: string): Promise<void> {
+  await apiFetch<ApiResponse<{ message: string }>>('/auth/forgot-password', {
+    method: 'POST',
+    body:   JSON.stringify({ email }),
+  })
+}
+
+export async function logoutRequest(token: string): Promise<void> {
+  await apiFetch<ApiResponse<{ message: string }>>('/auth/logout', {
+    method: 'POST',
+  }, token)
+}

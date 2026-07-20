@@ -1,4 +1,4 @@
-import { prisma } from '@finmark/db'
+import { resolveUserByCognitoIdentity } from '@finmark/db'
 import type { UserRole } from '@finmark/shared'
 
 export interface ResolvedUser {
@@ -10,16 +10,17 @@ export interface ResolvedUser {
 const cache = new Map<string, { user: ResolvedUser; expiresAt: number }>()
 const CACHE_TTL_MS = 30_000
 
-export async function resolveUserFromDatabase(cognitoId: string): Promise<ResolvedUser | null> {
-  const cached = cache.get(cognitoId)
+export async function resolveUserFromDatabase(
+  sub: string,
+  emailHint?: string
+): Promise<ResolvedUser | null> {
+  const cacheKey = `${sub}:${emailHint ?? ''}`
+  const cached = cache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) {
     return cached.user
   }
 
-  const user = await prisma.user.findUnique({
-    where: { cognitoId },
-    select: { email: true, role: true, clientId: true, isActive: true },
-  })
+  const user = await resolveUserByCognitoIdentity(sub, emailHint)
 
   if (!user?.isActive) return null
 
@@ -29,6 +30,6 @@ export async function resolveUserFromDatabase(cognitoId: string): Promise<Resolv
     clientId: user.clientId ?? undefined,
   }
 
-  cache.set(cognitoId, { user: resolved, expiresAt: Date.now() + CACHE_TTL_MS })
+  cache.set(cacheKey, { user: resolved, expiresAt: Date.now() + CACHE_TTL_MS })
   return resolved
 }

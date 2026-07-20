@@ -2,7 +2,7 @@
  * @author Khaesey Angel Tablante
  */
 
-import { prisma } from '@finmark/db'
+import { prisma, resolveUserByCognitoIdentity } from '@finmark/db'
 import { createLogger } from '@finmark/shared'
 import type { UserRole } from '@finmark/shared'
 import { getUserFromToken } from './cognitoService'
@@ -47,23 +47,27 @@ export async function syncUserToDatabase(
 }
 
 // get full user profile from DB (includes role, clientId)
-export async function getUserProfile(cognitoId: string) {
-  const user = await prisma.user.findUnique({
-    where:   { cognitoId },
-    include: { client: { select: { id: true, name: true, industry: true } } },
-  })
+export async function getUserProfile(cognitoId: string, emailHint?: string) {
+  const user = await resolveUserByCognitoIdentity(cognitoId, emailHint)
 
   if (!user) return null
 
+  const withClient = await prisma.user.findUnique({
+    where:   { id: user.id },
+    include: { client: { select: { id: true, name: true, industry: true } } },
+  })
+
+  if (!withClient) return null
+
   return {
-    id:        user.id,
-    cognitoId: user.cognitoId,
-    email:     user.email,
-    name:      user.name,
-    role:      user.role as UserRole,
-    clientId:  user.clientId ?? undefined,
-    client:    user.client ?? undefined,
-    isActive:  user.isActive,
+    id:        withClient.id,
+    cognitoId: withClient.cognitoId,
+    email:     withClient.email,
+    name:      withClient.name,
+    role:      withClient.role as UserRole,
+    clientId:  withClient.clientId ?? undefined,
+    client:    withClient.client ?? undefined,
+    isActive:  withClient.isActive,
   }
 }
 

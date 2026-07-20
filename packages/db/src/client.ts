@@ -18,4 +18,5 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export { Prisma }
+export { resolveUserByCognitoIdentity } from './resolveUser'
 export default prisma

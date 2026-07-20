@@ -224,7 +224,7 @@ export async function getProfile(req: Request, res: Response) {
     if (!req.user?.sub) {
       return res.status(401).json({ success: false, error: 'Unauthorized' })
     }
-    const profile = await getUserProfile(req.user.sub)
+    const profile = await getUserProfile(req.user.sub, req.user.email)
     if (!profile) {
       return res.status(404).json({ success: false, error: 'User not found' })
     }

@@ -4,6 +4,8 @@ import {
   useState, useEffect, useCallback,
 } from 'react'
 import type { UserRole } from '@finmark/shared'
+import { fetchUserProfile } from './api-client'
+import { applyAccentColor } from './user-preferences'
 
 export interface AuthUser {
   id:        string
@@ -26,6 +28,8 @@ interface AuthContextValue {
   isAuthenticated: boolean
   login:           (user: AuthUser, tokens: AuthTokens) => void
   logout:          () => void
+  refreshProfile:  () => Promise<void>
+  updateUser:      (patch: Partial<AuthUser>) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -42,12 +46,17 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
 }
 
+function persistUser(user: AuthUser) {
+  localStorage.setItem(KEY_USER, JSON.stringify(user))
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user,      setUser]      = useState<AuthUser | null>(null)
   const [tokens,    setTokens]    = useState<AuthTokens | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    applyAccentColor()
     try {
       const storedUser   = localStorage.getItem(KEY_USER)
       const storedTokens = localStorage.getItem(KEY_TOKENS)
@@ -63,12 +72,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
+    setUser(prev => {
+      if (!prev) return prev
+      const next = { ...prev, ...patch }
+      persistUser(next)
+      return next
+    })
+  }, [])
+
+  const refreshProfile = useCallback(async () => {
+    if (!tokens?.accessToken) return
+    try {
+      const profile = await fetchUserProfile(tokens.accessToken)
+      const next: AuthUser = {
+        id:       profile.id,
+        email:    profile.email,
+        name:     profile.name,
+        role:     profile.role as UserRole,
+        clientId: profile.clientId,
+      }
+      setUser(next)
+      persistUser(next)
+    } catch {
+      // keep cached user if profile fetch fails
+    }
+  }, [tokens?.accessToken])
+
+  useEffect(() => {
+    if (tokens?.accessToken) refreshProfile()
+  }, [tokens?.accessToken, refreshProfile])
+
   const login = useCallback((newUser: AuthUser, newTokens: AuthTokens) => {
     setUser(newUser)
     setTokens(newTokens)
-    localStorage.setItem(KEY_USER,   JSON.stringify(newUser))
+    persistUser(newUser)
     localStorage.setItem(KEY_TOKENS, JSON.stringify(newTokens))
-    // also set cookie so Next.js middleware can read it
     setCookie('finmark_token', newTokens.accessToken)
   }, [])
 
@@ -89,6 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user && !!tokens,
       login,
       logout,
+      refreshProfile,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>
