@@ -11,6 +11,30 @@ import { healthRouter } from './routes/health'
 const app = express()
 const PORT = Number(process.env.PORT || 4000)
 
+/** Strip trailing slashes — browsers never send them in the Origin header. */
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, '')
+}
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true
+
+  const normalized = normalizeOrigin(origin)
+  const allowed = (process.env.ALLOWED_ORIGINS || 'http://localhost:3001')
+    .split(',')
+    .map(normalizeOrigin)
+    .filter(Boolean)
+
+  if (allowed.includes(normalized)) return true
+
+  // Vercel preview URLs change on every deploy; match project prefix safely.
+  const vercelPattern =
+    process.env.VERCEL_ORIGIN_PATTERN ||
+    '^https://fin-mark-web-pyee([-.a-z0-9]*)?\\.vercel\\.app$'
+
+  return new RegExp(vercelPattern).test(normalized)
+}
+
 const register = new Registry()
 collectDefaultMetrics({ register })
 
@@ -38,9 +62,15 @@ app.use(helmet())
  * CORS
  */
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3001'],
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      callback(null, origin || true)
+    } else {
+      callback(new Error(`CORS blocked origin: ${origin}`))
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
 }))
 
