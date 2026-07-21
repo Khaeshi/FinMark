@@ -111,7 +111,25 @@ Mention only if asked:
 | **Reports** | Financial table, add/edit record, CSV export |
 | **Users** | List, change role, assign client, deactivate, invite (Cognito register) |
 | **Analytics** | Revenue, orders by period, client trend, heatmap, top clients |
-| **Dashboard** | KPIs; SUPERADMIN system health + platform metrics |
+| **Dashboard** | KPIs; SUPERADMIN system health + platform metrics + **WAF: active** |
+
+---
+
+## 7b. App-layer WAF demo (30 seconds)
+
+Gateway blocks SQLi/XSS probes before they reach services. Line for judges: *“WAF sits on the API gateway — same place as auth and rate limits.”*
+
+```bash
+# Should return 403 with code WAF_BLOCKED
+curl -s "http://localhost:4000/api/orders?q=%27%20OR%201%3D1--"
+
+# Normal login still works (dev)
+curl -s -X POST "http://localhost:4000/api/auth/dev-login" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"admin@finmark.com\",\"password\":\"devpassword\"}"
+```
+
+On the SUPERADMIN dashboard, System Health shows **WAF: active** and a block count from `/health`.
 
 ---
 

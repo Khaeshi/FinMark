@@ -60,7 +60,7 @@ The platform runs on AWS in the `ap-southeast-1` (Singapore) region — closest 
 | Resource | Service | Notes |
 |---|---|---|
 | CDN | CloudFront | Edge caching, DDoS absorption |
-| WAF | AWS WAF | OWASP rules, rate limiting at edge |
+| WAF | AWS WAF (future) + **app-layer WAF on API gateway (live now)** | Prototype/Railway: OWASP-style path/query/body checks in `services/api-gateway`. AWS WAF + CloudFront remain the production edge target when infra is applied. |
 | Auth | Cognito | User pools, JWT, MFA |
 | Database | RDS PostgreSQL | Primary + read replica |
 | Cache | ElastiCache | Redis for dashboard and reports |
@@ -75,4 +75,5 @@ The platform runs on AWS in the `ap-southeast-1` (Singapore) region — closest 
 - Infrastructure changes require Khael's review before merging
 - Never commit real AWS credentials — use `.env` and AWS Secrets Manager
 - The Terraform files are documentation and future deployment reference — not applied yet in prototype phase
+- **Until CloudFront/AWS WAF is applied**, production-like deploys (e.g. Railway) rely on the **app-layer WAF** in `api-gateway` (`middleware/waf.ts`): path probes, SQLi/XSS in query & JSON body, optional `WAF_DENY_IPS`, Prometheus `waf_blocks_total`
 - The `ap-southeast-1` region is intentional — all SME clients are in Southeast Asia

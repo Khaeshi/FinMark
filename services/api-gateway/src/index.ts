@@ -5,6 +5,7 @@ import { collectDefaultMetrics, Registry, Counter, Histogram } from 'prom-client
 import { authMiddleware } from './middleware/auth'
 import { rateLimiter, strictRateLimiter } from './middleware/rateLimiter'
 import { requestLogger } from './middleware/requestLogger'
+import { wafMiddleware, setWafPromCounter } from './middleware/waf'
 import { proxyRoutes } from './routes/proxy'
 import { healthRouter } from './routes/health'
 
@@ -53,10 +54,24 @@ const httpRequestTotal = new Counter({
   registers: [register],
 })
 
+const wafBlocksTotal = new Counter({
+  name: 'waf_blocks_total',
+  help: 'Requests blocked by app-layer WAF',
+  labelNames: ['rule'],
+  registers: [register],
+})
+setWafPromCounter(wafBlocksTotal)
+
 /**
- * Security Headers
+ * Security Headers (API-oriented helmet)
  */
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: false, // JSON API — no HTML CSP needed
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // Vercel → Railway
+  referrerPolicy: { policy: 'no-referrer' },
+  frameguard: { action: 'deny' },
+  noSniff: true,
+}))
 
 /**
  * Preflight (OPTIONS) short-circuit — use middleware instead of app.options('*')
@@ -94,12 +109,17 @@ app.use(cors({
 }))
 
 /**
- * Body Parser
+ * Body Parser — 256kb cap reduces DoS surface (orders/financials are small JSON)
  */
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '256kb' }))
+app.use(express.urlencoded({ extended: true, limit: '256kb' }))
 
 app.use(requestLogger)
+
+/**
+ * App-layer WAF — before rate limit / auth / proxy
+ */
+app.use(wafMiddleware)
 
 // middleware to track all requests
 app.use((req, res, next) => {
@@ -155,6 +175,16 @@ app.use((req, res) => {
  * Global Error Handler
  */
 app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  // Body parser payload-too-large
+  if ((err as { type?: string; status?: number }).type === 'entity.too.large') {
+    return res.status(413).json({
+      success: false,
+      error: 'Request body too large',
+      code: 'WAF_BLOCKED',
+      rule: 'body_size',
+    })
+  }
+
   console.error(JSON.stringify({
     level: 'error',
     service: 'api-gateway',

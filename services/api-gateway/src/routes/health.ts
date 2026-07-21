@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { getWafStats } from '../middleware/waf'
 
 const router = Router()
 
@@ -38,6 +39,7 @@ router.get('/', async (_req, res) => {
 
   const allHealthy = checks.every(c => c.status === 'healthy')
   const anyDown = checks.some(c => c.status === 'down')
+  const waf = getWafStats()
 
   res.json({
     success: true,
@@ -46,6 +48,11 @@ router.get('/', async (_req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     services: checks,
+    waf: {
+      enabled: waf.enabled,
+      blocksTotal: waf.blocksTotal,
+      byRule: waf.byRule,
+    },
   })
 })
 
